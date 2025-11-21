@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "since",
+    "name": "Since",
     "slug": "since",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,7 +13,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.matiasturra.since",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSUserNotificationUsageDescription": "This app uses notifications to congratulate you about your time sensitive accomplishments.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -25,6 +31,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bc18fb25-dfa4-49d9-821b-699264586dc2"
+      }
+    },
+    "owner": "matias.turra"
   }
 }
