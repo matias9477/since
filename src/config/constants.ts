@@ -19,10 +19,10 @@ export const TIME_UNITS: readonly TimeUnit[] = ['days', 'weeks', 'months', 'year
 export const REMINDER_TYPES: readonly ReminderType[] = ['one_off', 'recurring'] as const;
 
 /**
- * Available recurrence frequencies
- * TODO: Consider making this extensible in the future
+ * Available recurrence frequencies for reminders
+ * Users can set reminders to repeat daily, weekly, monthly, or yearly
  */
-export const RECURRENCE_FREQUENCIES: readonly RecurrenceFrequency[] = ['daily', 'weekly', 'monthly'] as const;
+export const RECURRENCE_FREQUENCIES: readonly RecurrenceFrequency[] = ['daily', 'weekly', 'monthly', 'yearly'] as const;
 
 /**
  * Default theme preference

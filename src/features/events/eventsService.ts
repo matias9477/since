@@ -3,6 +3,8 @@ import { getDb } from '@/db/client';
 import { events } from '@/db/schema';
 import type { Event, CreateEventInput, UpdateEventInput } from './types';
 import { DEFAULT_TIME_UNIT } from '@/config/constants';
+import { PREDEFINED_MILESTONES } from '@/config/milestones';
+import * as milestonesService from '@/features/milestones/milestonesService';
 
 /**
  * Generate a UUID v4 string
@@ -102,6 +104,20 @@ export const createEvent = async (input: CreateEventInput): Promise<Event> => {
   };
   
   await db.insert(events).values(newEvent);
+  
+  // Auto-create predefined milestones for the new event
+  try {
+    const milestoneInputs = PREDEFINED_MILESTONES.map((milestone) => ({
+      eventId: id,
+      label: milestone.label,
+      targetAmount: milestone.targetAmount,
+      targetUnit: milestone.targetUnit,
+    }));
+    await milestonesService.createMilestones(milestoneInputs);
+  } catch (error) {
+    // Log error but don't fail event creation if milestones fail
+    console.error('Error creating predefined milestones:', error);
+  }
   
   return {
     id,

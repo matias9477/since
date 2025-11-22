@@ -14,7 +14,8 @@
       "@/config/*": ["./src/config/*"],
       "@/db/*": ["./src/db/*"],
       "@/navigation/*": ["./src/navigation/*"],
-      "@/store/*": ["./src/store/*"]
+      "@/store/*": ["./src/store/*"],
+      "@/utils/*": ["./src/utils/*"]
     },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

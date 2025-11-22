@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { TimeSinceLabel } from './TimeSinceLabel';
 import { useTheme } from '@/theme';
 import type { Event } from '@/features/events/types';
@@ -29,11 +30,20 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
     >
       <View style={styles.content}>
         <View style={styles.header}>
+          {event.icon && (
+            <Ionicons
+              name={event.icon as any}
+              size={20}
+              color={colors.primary}
+              style={styles.icon}
+            />
+          )}
           <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
             {event.title}
           </Text>
-          {/* TODO: Replace hardcoded emoji with icon from theme/icons library */}
-          {event.isPinned && <Text style={styles.pinBadge}>📌</Text>}
+          {event.isPinned && (
+            <Ionicons name="pin" size={16} color={colors.primary} style={styles.pinIcon} />
+          )}
         </View>
         {event.description && (
           <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={2}>
@@ -70,13 +80,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  icon: {
+    marginRight: 8,
+  },
   title: {
     fontSize: 18,
     fontWeight: '600',
     flex: 1,
   },
-  pinBadge: {
-    fontSize: 16,
+  pinIcon: {
     marginLeft: 8,
   },
   description: {

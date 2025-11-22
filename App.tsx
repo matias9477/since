@@ -3,6 +3,7 @@ import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { AppNavigator } from "@/navigation/AppNavigator";
 import { initializeDatabase } from "@/db/client";
+import { configureNotifications } from "./src/utils/notifications";
 import { useTheme } from "@/theme/index";
 
 /**
@@ -17,11 +18,12 @@ export default function App() {
     const init = async () => {
       try {
         await initializeDatabase();
+        await configureNotifications();
         setIsInitialized(true);
       } catch (error) {
         // TODO: Replace hardcoded error message with i18n translations or user-friendly error handling
-        console.error("Failed to initialize database:", error);
-        // Still show the app even if DB init fails
+        console.error("Failed to initialize app:", error);
+        // Still show the app even if initialization fails
         setIsInitialized(true);
       }
     };
