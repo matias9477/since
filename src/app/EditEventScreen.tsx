@@ -23,6 +23,7 @@ import {
   REMINDER_TYPES,
 } from "@/config/constants";
 import { EVENT_ICONS, type EventIconName } from "@/config/eventIcons";
+import { PickerModal, type PickerOption } from "@/components/PickerModal";
 import { useTheme } from "../theme";
 import type {
   TimeUnit,
@@ -58,7 +59,7 @@ export const EditEventScreen: React.FC = () => {
     deleteReminder,
     getRemindersByEventId,
   } = useRemindersStore();
-  const { colors } = useTheme();
+  const { colors, isDarkMode } = useTheme();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -363,6 +364,10 @@ export const EditEventScreen: React.FC = () => {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
+                })}{" "}
+                at {startDate.toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
                 })}
               </Text>
               <Ionicons
@@ -373,14 +378,15 @@ export const EditEventScreen: React.FC = () => {
             </TouchableOpacity>
             <DateTimePickerModal
               isVisible={showDatePicker}
-              mode="date"
+              mode="datetime"
               date={startDate}
               onConfirm={handleDateConfirm}
               onCancel={handleDateCancel}
               maximumDate={new Date()}
               display="spinner"
-              // TODO: Replace hardcoded themeVariant with user's theme preference from settings
-              themeVariant="light"
+              themeVariant={isDarkMode ? "dark" : "light"}
+              accentColor={colors.primary}
+              textColor={colors.text}
             />
           </View>
 
@@ -429,133 +435,46 @@ export const EditEventScreen: React.FC = () => {
             </TouchableOpacity>
 
             {/* Icon Picker Modal */}
-            <Modal
+            <PickerModal<EventIconName | null>
               visible={showIconPicker}
-              transparent
-              animationType="slide"
-              onRequestClose={() => setShowIconPicker(false)}
-            >
-              <TouchableOpacity
-                style={styles.modalOverlay}
-                activeOpacity={1}
-                onPress={() => setShowIconPicker(false)}
-              >
-                <View
-                  style={[
-                    styles.modalContent,
-                    { backgroundColor: colors.surface },
-                  ]}
-                  onStartShouldSetResponder={() => true}
-                >
-                  <SafeAreaView edges={["bottom"]}>
-                    <View
-                      style={[
-                        styles.modalHeader,
-                        { borderBottomColor: colors.border },
-                      ]}
-                    >
-                      <Text style={[styles.modalTitle, { color: colors.text }]}>
-                        Select Icon
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => setShowIconPicker(false)}
-                        accessibilityRole="button"
-                        accessibilityLabel="Close icon picker"
-                      >
-                        <Ionicons name="close" size={24} color={colors.text} />
-                      </TouchableOpacity>
-                    </View>
-                    <ScrollView
-                      style={styles.modalOptions}
-                      showsVerticalScrollIndicator={false}
-                    >
-                      <TouchableOpacity
-                        style={[
-                          styles.optionItem,
-                          !icon && {
-                            backgroundColor: colors.primary + "20",
-                          },
-                        ]}
-                        onPress={() => {
-                          setIcon(null);
-                          setShowIconPicker(false);
+              title="Select Icon"
+              options={[
+                {
+                  value: null,
+                  label: "No icon",
+                  renderCustom: (isSelected, themeColors) => (
+                    <>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "500",
+                          textTransform: "capitalize",
+                          color: isSelected ? themeColors.primary : themeColors.text,
                         }}
-                        accessibilityRole="button"
-                        accessibilityLabel="No icon"
-                        activeOpacity={0.7}
                       >
-                        <Text
-                          style={[
-                            styles.optionText,
-                            { color: !icon ? colors.primary : colors.text },
-                          ]}
-                        >
-                          No icon
-                        </Text>
-                        {!icon && (
-                          <Ionicons
-                            name="checkmark"
-                            size={20}
-                            color={colors.primary}
-                          />
-                        )}
-                      </TouchableOpacity>
-                      {EVENT_ICONS.map((iconOption) => (
-                        <TouchableOpacity
-                          key={iconOption.name}
-                          style={[
-                            styles.optionItem,
-                            icon === iconOption.name && {
-                              backgroundColor: colors.primary + "20",
-                            },
-                          ]}
-                          onPress={() => {
-                            setIcon(iconOption.name);
-                            setShowIconPicker(false);
-                          }}
-                          accessibilityRole="button"
-                          accessibilityLabel={iconOption.label}
-                          activeOpacity={0.7}
-                        >
-                          <View style={styles.iconOptionContent}>
-                            <Ionicons
-                              name={iconOption.name}
-                              size={20}
-                              color={
-                                icon === iconOption.name
-                                  ? colors.primary
-                                  : colors.text
-                              }
-                            />
-                            <Text
-                              style={[
-                                styles.optionText,
-                                {
-                                  color:
-                                    icon === iconOption.name
-                                      ? colors.primary
-                                      : colors.text,
-                                  marginLeft: 12,
-                                },
-                              ]}
-                            >
-                              {iconOption.label}
-                            </Text>
-                          </View>
-                          {icon === iconOption.name && (
-                            <Ionicons
-                              name="checkmark"
-                              size={20}
-                              color={colors.primary}
-                            />
-                          )}
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </SafeAreaView>
-                </View>
-              </TouchableOpacity>
-            </Modal>
+                        No icon
+                      </Text>
+                      {isSelected && (
+                        <Ionicons
+                          name="checkmark"
+                          size={20}
+                          color={themeColors.primary}
+                        />
+                      )}
+                    </>
+                  ),
+                },
+                ...EVENT_ICONS.map((iconOption) => ({
+                  value: iconOption.name as EventIconName | null,
+                  label: iconOption.label,
+                  icon: iconOption.name,
+                })),
+              ]}
+              selectedValue={icon}
+              onSelect={setIcon}
+              onClose={() => setShowIconPicker(false)}
+              maxHeight="80%"
+            />
           </View>
 
           <View style={styles.field}>
@@ -584,87 +503,19 @@ export const EditEventScreen: React.FC = () => {
             </TouchableOpacity>
 
             {/* Time Unit Picker Modal */}
-            <Modal
+            <PickerModal<TimeUnit>
               visible={showTimeUnitPicker}
-              transparent
-              animationType="slide"
-              onRequestClose={() => setShowTimeUnitPicker(false)}
-            >
-              <TouchableOpacity
-                style={styles.modalOverlay}
-                activeOpacity={1}
-                onPress={() => setShowTimeUnitPicker(false)}
-              >
-                <View
-                  style={[
-                    styles.modalContent,
-                    { backgroundColor: colors.surface },
-                  ]}
-                  onStartShouldSetResponder={() => true}
-                >
-                  <SafeAreaView edges={["bottom"]}>
-                    <View
-                      style={[
-                        styles.modalHeader,
-                        { borderBottomColor: colors.border },
-                      ]}
-                    >
-                      <Text style={[styles.modalTitle, { color: colors.text }]}>
-                        Select Time Unit
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => setShowTimeUnitPicker(false)}
-                        accessibilityRole="button"
-                        accessibilityLabel="Close time unit picker"
-                      >
-                        <Ionicons name="close" size={24} color={colors.text} />
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.modalOptions}>
-                      {TIME_UNITS.map((unit) => (
-                        <TouchableOpacity
-                          key={unit}
-                          style={[
-                            styles.optionItem,
-                            showTimeAs === unit && {
-                              backgroundColor: colors.primary + "20",
-                            },
-                          ]}
-                          onPress={() => {
-                            setShowTimeAs(unit);
-                            setShowTimeUnitPicker(false);
-                          }}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Select ${unit}`}
-                          activeOpacity={0.7}
-                        >
-                          <Text
-                            style={[
-                              styles.optionText,
-                              {
-                                color:
-                                  showTimeAs === unit
-                                    ? colors.primary
-                                    : colors.text,
-                              },
-                            ]}
-                          >
-                            {unit.charAt(0).toUpperCase() + unit.slice(1)}
-                          </Text>
-                          {showTimeAs === unit && (
-                            <Ionicons
-                              name="checkmark"
-                              size={20}
-                              color={colors.primary}
-                            />
-                          )}
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </SafeAreaView>
-                </View>
-              </TouchableOpacity>
-            </Modal>
+              title="Select Time Unit"
+              options={TIME_UNITS.map((unit) => ({
+                value: unit,
+                label: unit.charAt(0).toUpperCase() + unit.slice(1),
+              }))}
+              selectedValue={showTimeAs}
+              onSelect={setShowTimeAs}
+              onClose={() => setShowTimeUnitPicker(false)}
+              maxHeight="50%"
+              showScrollView={false}
+            />
           </View>
 
           {/* Reminders Section - only show when editing existing event */}
@@ -1009,7 +860,9 @@ export const EditEventScreen: React.FC = () => {
                       onConfirm={handleReminderDateConfirm}
                       onCancel={handleReminderDateCancel}
                       display="spinner"
-                      themeVariant="light"
+                      themeVariant={isDarkMode ? "dark" : "light"}
+                      accentColor={colors.primary}
+                      textColor={colors.text}
                     />
                   </View>
                 )}
@@ -1110,6 +963,7 @@ const styles = StyleSheet.create({
   },
   modalSafeArea: {
     maxHeight: "95%",
+    justifyContent: "flex-end",
   },
   modalOptions: {
     flex: 1,
@@ -1118,26 +972,7 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
-  optionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 8,
-    marginVertical: 4,
-  },
-  optionText: {
-    fontSize: 16,
-    fontWeight: "500",
-    textTransform: "capitalize",
-  },
   iconSelectContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  iconOptionContent: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,

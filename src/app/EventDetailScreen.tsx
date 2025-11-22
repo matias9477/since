@@ -13,12 +13,57 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEventsStore } from "@/features/events/eventsStore";
 import { useMilestonesStore } from "@/features/milestones/milestonesStore";
 import { useRemindersStore } from "@/features/reminders/remindersStore";
-import { TimeSinceLabel } from "@/components/TimeSinceLabel";
 import { TIME_UNITS } from "@/config/constants";
 import { isMilestoneReached } from "@/config/milestones";
 import { useTheme } from "@/theme/index";
 import type { TimeUnit } from "@/config/types";
 import type { RootStackParamList } from "@/navigation/types";
+import { differenceInDays, differenceInHours, differenceInMinutes, differenceInSeconds } from "date-fns";
+import { formatTimeSince } from "@/lib/formatTimeSince";
+
+/**
+ * Extended time unit type for frontend-only units (hours, minutes, seconds)
+ * These are not stored in the backend but can be displayed in the details screen
+ */
+type ExtendedTimeUnit = TimeUnit | "hours" | "minutes" | "seconds";
+
+/**
+ * All available time units in order from largest to smallest
+ */
+const ALL_TIME_UNITS: ExtendedTimeUnit[] = ["years", "months", "weeks", "days", "hours", "minutes", "seconds"];
+
+/**
+ * Formats time for extended units (including hours, minutes, seconds)
+ * For hours, minutes, and seconds, shows only the total count (no compound units)
+ * Falls back to formatTimeSince for standard units
+ */
+const formatExtendedTimeSince = (startDate: Date, unit: ExtendedTimeUnit): string => {
+  const now = new Date();
+
+  switch (unit) {
+    case "hours": {
+      const totalHours = differenceInHours(now, startDate);
+      const unitLabel = totalHours === 1 ? "hour" : "hours";
+      return `${totalHours} ${unitLabel}`;
+    }
+
+    case "minutes": {
+      const totalMinutes = differenceInMinutes(now, startDate);
+      const unitLabel = totalMinutes === 1 ? "minute" : "minutes";
+      return `${totalMinutes} ${unitLabel}`;
+    }
+
+    case "seconds": {
+      const totalSeconds = differenceInSeconds(now, startDate);
+      const unitLabel = totalSeconds === 1 ? "second" : "seconds";
+      return `${totalSeconds} ${unitLabel}`;
+    }
+
+    default:
+      // Use the standard formatter for days, weeks, months, years
+      return formatTimeSince(startDate, unit as TimeUnit);
+  }
+};
 
 type EventDetailScreenRouteProp = RouteProp<RootStackParamList, "EventDetail">;
 type EventDetailScreenNavigationProp = NativeStackNavigationProp<
@@ -40,7 +85,7 @@ export const EventDetailScreen: React.FC = () => {
     useRemindersStore();
   const { colors } = useTheme();
   const [refreshKey, setRefreshKey] = useState(0);
-  const [previewUnit, setPreviewUnit] = useState<TimeUnit | null>(null);
+  const [previewUnit, setPreviewUnit] = useState<ExtendedTimeUnit | null>(null);
 
   const event = getEventById(eventId);
   const eventMilestones = getMilestonesByEventId(eventId);
@@ -54,24 +99,40 @@ export const EventDetailScreen: React.FC = () => {
   }, [event, previewUnit]);
 
   /**
-   * Cycles to the next time unit
+   * Gets the allowed time units for cycling based on the event's original unit
+   * Only allows cycling to smaller or equal units (including hours, minutes, seconds)
    */
-  const handleNextUnit = () => {
-    if (!event) return;
-    const currentIndex = TIME_UNITS.indexOf(previewUnit || event.showTimeAs);
-    const nextIndex = (currentIndex + 1) % TIME_UNITS.length;
-    setPreviewUnit(TIME_UNITS[nextIndex]);
+  const getAllowedUnits = (): ExtendedTimeUnit[] => {
+    if (!event) return [];
+    const originalUnit = event.showTimeAs;
+    const originalIndex = ALL_TIME_UNITS.indexOf(originalUnit);
+    // Return all units from the original unit down to seconds (inclusive)
+    return ALL_TIME_UNITS.slice(originalIndex);
   };
 
   /**
-   * Cycles to the previous time unit
+   * Cycles to the next time unit (only within allowed units)
+   */
+  const handleNextUnit = () => {
+    if (!event) return;
+    const allowedUnits = getAllowedUnits();
+    const currentUnit = previewUnit || event.showTimeAs;
+    const currentIndex = allowedUnits.indexOf(currentUnit);
+    const nextIndex = (currentIndex + 1) % allowedUnits.length;
+    setPreviewUnit(allowedUnits[nextIndex]);
+  };
+
+  /**
+   * Cycles to the previous time unit (only within allowed units)
    */
   const handlePreviousUnit = () => {
     if (!event) return;
-    const currentIndex = TIME_UNITS.indexOf(previewUnit || event.showTimeAs);
+    const allowedUnits = getAllowedUnits();
+    const currentUnit = previewUnit || event.showTimeAs;
+    const currentIndex = allowedUnits.indexOf(currentUnit);
     const prevIndex =
-      (currentIndex - 1 + TIME_UNITS.length) % TIME_UNITS.length;
-    setPreviewUnit(TIME_UNITS[prevIndex]);
+      (currentIndex - 1 + allowedUnits.length) % allowedUnits.length;
+    setPreviewUnit(allowedUnits[prevIndex]);
   };
 
   useEffect(() => {
@@ -88,14 +149,26 @@ export const EventDetailScreen: React.FC = () => {
   }, [eventId, loadMilestones, loadReminders]);
 
   // Refresh time display periodically
+  // For seconds: update every second
+  // For minutes: update every minute (60000ms)
+  // For other units: update every minute
   useEffect(() => {
-    // TODO: Make refresh interval configurable via settings (currently hardcoded to 60000ms = 1 minute)
-    const interval = setInterval(() => {
-      setRefreshKey((prev) => prev + 1);
-    }, 60000);
+    const currentUnit = previewUnit || event?.showTimeAs;
+    const isSeconds = currentUnit === "seconds";
+    const isMinutes = currentUnit === "minutes";
+    
+    const interval = isSeconds 
+      ? 1000 // 1 second for seconds
+      : isMinutes 
+      ? 60000 // 1 minute for minutes
+      : 60000; // 1 minute for other units
 
-    return () => clearInterval(interval);
-  }, []);
+    const timer = setInterval(() => {
+      setRefreshKey((prev) => prev + 1);
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [previewUnit, event?.showTimeAs]);
 
   useEffect(() => {
     // TODO: Replace hardcoded strings with i18n translations
@@ -169,14 +242,17 @@ export const EventDetailScreen: React.FC = () => {
               </TouchableOpacity>
 
               <View style={styles.timeTextContainer}>
-                <TimeSinceLabel
-                  startDate={event.startDate}
-                  unit={previewUnit || event.showTimeAs}
+                <Text
                   style={[styles.timeText, { color: colors.primary }]}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                   minimumFontScale={0.7}
-                />
+                >
+                  {formatExtendedTimeSince(
+                    event.startDate,
+                    previewUnit || event.showTimeAs
+                  )}
+                </Text>
               </View>
 
               <TouchableOpacity
