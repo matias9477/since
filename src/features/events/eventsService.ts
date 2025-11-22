@@ -5,6 +5,7 @@ import type { Event, CreateEventInput, UpdateEventInput } from './types';
 import { DEFAULT_TIME_UNIT } from '@/config/constants';
 import { PREDEFINED_MILESTONES } from '@/config/milestones';
 import * as milestonesService from '@/features/milestones/milestonesService';
+import { scheduleEventMilestoneNotifications } from '@/utils/notifications';
 
 /**
  * Generate a UUID v4 string
@@ -106,6 +107,13 @@ export const createEvent = async (input: CreateEventInput): Promise<Event> => {
   await db.insert(events).values(newEvent);
   
   // Auto-create predefined milestones for the new event
+  let createdMilestones: Array<{
+    id: string;
+    label: string;
+    targetAmount: number;
+    targetUnit: 'days' | 'weeks' | 'months' | 'years';
+  }> = [];
+  
   try {
     const milestoneInputs = PREDEFINED_MILESTONES.map((milestone) => ({
       eventId: id,
@@ -113,10 +121,24 @@ export const createEvent = async (input: CreateEventInput): Promise<Event> => {
       targetAmount: milestone.targetAmount,
       targetUnit: milestone.targetUnit,
     }));
-    await milestonesService.createMilestones(milestoneInputs);
+    createdMilestones = await milestonesService.createMilestones(milestoneInputs);
   } catch (error) {
     // Log error but don't fail event creation if milestones fail
     console.error('Error creating predefined milestones:', error);
+  }
+
+  // Schedule milestone notifications for all milestones
+  // This happens asynchronously and won't block event creation
+  if (createdMilestones.length > 0) {
+    scheduleEventMilestoneNotifications(
+      id,
+      input.title,
+      startDate,
+      createdMilestones
+    ).catch((error) => {
+      // Log error but don't fail event creation if notifications fail
+      console.error('Error scheduling milestone notifications:', error);
+    });
   }
   
   return {

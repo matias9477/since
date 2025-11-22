@@ -289,3 +289,152 @@ export const getScheduledNotifications = async () => {
   }
 };
 
+/**
+ * Calculate the exact date when a milestone will be reached
+ * Based on the event start date and milestone target
+ */
+export const calculateMilestoneDate = (
+  eventStartDate: Date,
+  targetAmount: number,
+  targetUnit: 'days' | 'weeks' | 'months' | 'years'
+): Date => {
+  const milestoneDate = new Date(eventStartDate);
+
+  switch (targetUnit) {
+    case 'days':
+      milestoneDate.setDate(milestoneDate.getDate() + targetAmount);
+      break;
+    case 'weeks':
+      milestoneDate.setDate(milestoneDate.getDate() + targetAmount * 7);
+      break;
+    case 'months':
+      // Add months using setMonth which handles month overflow correctly
+      milestoneDate.setMonth(milestoneDate.getMonth() + targetAmount);
+      break;
+    case 'years':
+      milestoneDate.setFullYear(milestoneDate.getFullYear() + targetAmount);
+      break;
+  }
+
+  return milestoneDate;
+};
+
+/**
+ * Format milestone time for notification message
+ * Converts milestone target to a readable time string
+ */
+const formatMilestoneTime = (
+  targetAmount: number,
+  targetUnit: 'days' | 'weeks' | 'months' | 'years'
+): string => {
+  const unitLabel = targetAmount === 1 
+    ? targetUnit.slice(0, -1) // Remove 's' for singular (e.g., "day" instead of "days")
+    : targetUnit;
+  
+  return `${targetAmount} ${unitLabel}`;
+};
+
+/**
+ * Schedule a milestone notification
+ * This schedules a one-time notification for when the milestone is reached
+ * The notification will fire even if the app is closed (OS-level scheduling)
+ */
+export const scheduleMilestoneNotification = async (
+  eventTitle: string,
+  milestoneLabel: string,
+  milestoneDate: Date,
+  eventId: string,
+  milestoneId: string,
+  targetAmount: number,
+  targetUnit: 'days' | 'weeks' | 'months' | 'years'
+): Promise<string> => {
+  if (isExpoGo()) return '';
+
+  // Don't schedule if milestone date is in the past
+  if (milestoneDate < new Date()) {
+    console.log(`[Notifications] Skipping milestone notification for ${milestoneLabel} - date is in the past`);
+    return '';
+  }
+
+  try {
+    // Request permissions if not already granted
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== 'granted') {
+      console.warn('[Notifications] Permission not granted, cannot schedule milestone notification');
+      return '';
+    }
+
+    const timeString = formatMilestoneTime(targetAmount, targetUnit);
+    const identifier = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '🎉 Milestone Reached!',
+        body: `It's been ${timeString} since ${eventTitle}`,
+        data: {
+          type: 'milestone',
+          eventId,
+          milestoneId,
+          milestoneLabel,
+        },
+        sound: true,
+      },
+      trigger: milestoneDate, // OS-level scheduling - works when app is closed
+    });
+
+    console.log(`[Notifications] Scheduled milestone notification: ${milestoneLabel} for ${milestoneDate.toISOString()}`);
+    return identifier;
+  } catch (error) {
+    console.error(`[Notifications] Error scheduling milestone notification for ${milestoneLabel}:`, error);
+    return '';
+  }
+};
+
+/**
+ * Schedule notifications for all milestones of an event
+ * Called when an event is created to schedule all milestone notifications upfront
+ */
+export const scheduleEventMilestoneNotifications = async (
+  eventId: string,
+  eventTitle: string,
+  eventStartDate: Date,
+  milestones: Array<{
+    id: string;
+    label: string;
+    targetAmount: number;
+    targetUnit: 'days' | 'weeks' | 'months' | 'years';
+  }>
+): Promise<void> => {
+  if (isExpoGo()) {
+    console.log('[Notifications] Running in Expo Go, skipping milestone notifications');
+    return;
+  }
+
+  console.log(`[Notifications] Scheduling ${milestones.length} milestone notifications for event: ${eventTitle}`);
+
+  for (const milestone of milestones) {
+    const milestoneDate = calculateMilestoneDate(
+      eventStartDate,
+      milestone.targetAmount,
+      milestone.targetUnit
+    );
+
+    await scheduleMilestoneNotification(
+      eventTitle,
+      milestone.label,
+      milestoneDate,
+      eventId,
+      milestone.id,
+      milestone.targetAmount,
+      milestone.targetUnit
+    );
+  }
+
+  console.log(`[Notifications] Finished scheduling milestone notifications for event: ${eventTitle}`);
+};
+
