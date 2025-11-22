@@ -13,7 +13,8 @@
       "@/lib/*": ["./src/lib/*"],
       "@/config/*": ["./src/config/*"],
       "@/db/*": ["./src/db/*"],
-      "@/navigation/*": ["./src/navigation/*"]
+      "@/navigation/*": ["./src/navigation/*"],
+      "@/store/*": ["./src/store/*"]
     },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

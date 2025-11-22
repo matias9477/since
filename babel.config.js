@@ -19,6 +19,7 @@ module.exports = function (api) {
             '@/config': './src/config',
             '@/db': './src/db',
             '@/navigation': './src/navigation',
+            '@/store': './src/store',
           },
         },
       ],

@@ -16,18 +16,23 @@ export const formatTimeSince = (startDate: Date, unit: TimeUnit): string => {
   switch (unit) {
     case 'days': {
       value = differenceInDays(now, startDate);
+      // TODO: Replace hardcoded unit labels with i18n translations
       unitLabel = value === 1 ? 'day' : 'days';
       break;
     }
     case 'weeks': {
       const days = differenceInDays(now, startDate);
+      // TODO: Make decimal precision configurable (currently hardcoded to 1 decimal place)
       value = Math.round((days / 7) * 10) / 10; // Round to 1 decimal place
+      // TODO: Replace hardcoded unit labels with i18n translations
       unitLabel = value === 1 ? 'week' : 'weeks';
       break;
     }
     case 'months': {
       const days = differenceInDays(now, startDate);
+      // TODO: Make average days per month configurable or use more accurate calculation (currently hardcoded to 30.44)
       value = Math.round((days / 30.44) * 10) / 10; // Average days per month
+      // TODO: Replace hardcoded unit labels with i18n translations
       unitLabel = value === 1 ? 'month' : 'months';
       break;
     }
@@ -37,9 +42,11 @@ export const formatTimeSince = (startDate: Date, unit: TimeUnit): string => {
       
       if (remainingMonths === 0) {
         value = years;
+        // TODO: Replace hardcoded unit labels with i18n translations
         unitLabel = years === 1 ? 'year' : 'years';
       } else {
         // Format as "X years Y months"
+        // TODO: Replace hardcoded unit labels with i18n translations
         return `${years} ${years === 1 ? 'year' : 'years'} ${remainingMonths} ${remainingMonths === 1 ? 'month' : 'months'}`;
       }
       break;
@@ -47,6 +54,7 @@ export const formatTimeSince = (startDate: Date, unit: TimeUnit): string => {
     default: {
       const days = differenceInDays(now, startDate);
       value = days;
+      // TODO: Replace hardcoded unit labels with i18n translations
       unitLabel = value === 1 ? 'day' : 'days';
     }
   }

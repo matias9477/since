@@ -7,15 +7,22 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { CompositeNavigationProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEventsStore } from '@/features/events/eventsStore';
 import { EventCard } from '@/components/EventCard';
-import { colors } from '@/theme';
+import { useTheme } from '@/theme';
 import type { Event } from '@/features/events/types';
-import type { RootStackParamList } from '@/navigation/types';
+import type { RootStackParamList, TabParamList } from '@/navigation/types';
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+// Home is in a tab navigator, but can navigate to stack screens
+type HomeScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList, 'Home'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 /**
  * Home screen displaying list of all events
@@ -23,6 +30,7 @@ type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'H
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { events, isLoading, loadEvents } = useEventsStore();
+  const { colors } = useTheme();
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -31,6 +39,7 @@ export const HomeScreen: React.FC = () => {
 
   // Refresh time display periodically (every minute)
   useEffect(() => {
+    // TODO: Make refresh interval configurable via settings (currently hardcoded to 60000ms = 1 minute)
     const interval = setInterval(() => {
       setRefreshKey((prev) => prev + 1);
     }, 60000);
@@ -52,42 +61,43 @@ export const HomeScreen: React.FC = () => {
 
   if (isLoading && events.length === 0) {
     return (
-      <View style={styles.centerContainer}>
+      <SafeAreaView style={[styles.container, styles.centerContainer]} edges={['top']}>
         <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <FlatList
         data={events}
         renderItem={renderEvent}
         keyExtractor={(item) => `${item.id}-${refreshKey}`}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No events yet</Text>
-            <Text style={styles.emptySubtext}>Tap the + button to add your first event</Text>
+            {/* TODO: Replace hardcoded empty state messages with i18n translations */}
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No events yet</Text>
+            <Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>Tap the + button to add your first event</Text>
           </View>
         }
         contentContainerStyle={styles.listContent}
       />
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { backgroundColor: colors.primary, shadowColor: colors.shadow }]}
         onPress={handleAddEvent}
         accessibilityRole="button"
         accessibilityLabel="Add new event"
       >
-        <Text style={styles.fabText}>+</Text>
+        {/* TODO: Consider replacing hardcoded "+" with icon from theme/icons library */}
+        <Text style={[styles.fabText, { color: '#FFFFFF' }]}>+</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.secondary,
   },
   listContent: {
     paddingVertical: 8,
@@ -106,12 +116,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 20,
     fontWeight: '600',
-    color: colors.text.secondary,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: colors.text.tertiary,
   },
   fab: {
     position: 'absolute',
@@ -120,10 +128,8 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.shadow.default,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -131,7 +137,6 @@ const styles = StyleSheet.create({
   },
   fabText: {
     fontSize: 32,
-    color: colors.text.inverse,
     fontWeight: '300',
   },
 });

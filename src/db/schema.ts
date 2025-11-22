@@ -10,6 +10,7 @@ export const events = sqliteTable('events', {
   title: text('title').notNull(),
   description: text('description'),
   startDate: integer('start_date', { mode: 'timestamp' }).notNull(),
+  // TODO: Replace hardcoded default 'days' with constant from config/constants.ts
   showTimeAs: text('show_time_as').$type<TimeUnit>().notNull().default('days'),
   color: text('color'),
   icon: text('icon'),
@@ -66,6 +67,7 @@ export const milestones = sqliteTable('milestones', {
  */
 export const settings = sqliteTable('settings', {
   id: text('id').primaryKey().default('default'),
+  // TODO: Replace hardcoded defaults with constants from config/constants.ts
   defaultShowTimeAs: text('default_show_time_as').$type<TimeUnit>().notNull().default('days'),
   useSystemTheme: integer('use_system_theme', { mode: 'boolean' }).notNull().default(true),
   theme: text('theme').$type<ThemePreference>().notNull().default('light'),

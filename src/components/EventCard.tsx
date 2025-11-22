@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { TimeSinceLabel } from './TimeSinceLabel';
-import { colors } from '@/theme';
+import { useTheme } from '@/theme';
 import type { Event } from '@/features/events/types';
 
 interface EventCardProps {
@@ -13,22 +13,30 @@ interface EventCardProps {
  * Card component for displaying an event in a list
  */
 export const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
+  const { colors } = useTheme();
+  
   return (
     <TouchableOpacity
-      style={[styles.card, event.isPinned && styles.pinnedCard]}
+      style={[
+        styles.card,
+        { backgroundColor: colors.surface, shadowColor: colors.shadow },
+        event.isPinned && styles.pinnedCard,
+        event.isPinned && { borderLeftColor: colors.primary },
+      ]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Event: ${event.title}`}
     >
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
             {event.title}
           </Text>
+          {/* TODO: Replace hardcoded emoji with icon from theme/icons library */}
           {event.isPinned && <Text style={styles.pinBadge}>📌</Text>}
         </View>
         {event.description && (
-          <Text style={styles.description} numberOfLines={2}>
+          <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={2}>
             {event.description}
           </Text>
         )}
@@ -42,12 +50,10 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.background.primary,
     borderRadius: 8,
     padding: 16,
     marginVertical: 6,
     marginHorizontal: 16,
-    shadowColor: colors.shadow.default,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -55,7 +61,6 @@ const styles = StyleSheet.create({
   },
   pinnedCard: {
     borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
   },
   content: {
     flex: 1,
@@ -68,7 +73,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text.primary,
     flex: 1,
   },
   pinBadge: {
@@ -77,7 +81,6 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 14,
-    color: colors.text.secondary,
     marginBottom: 8,
   },
   footer: {

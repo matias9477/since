@@ -10,6 +10,7 @@ let drizzleDb: ReturnType<typeof drizzle> | null = null;
  */
 const getDatabase = () => {
   if (!sqliteDb) {
+    // TODO: Make database name configurable (currently hardcoded to 'since.db')
     sqliteDb = SQLite.openDatabaseSync('since.db');
   }
   if (!drizzleDb) {
@@ -31,6 +32,7 @@ export const getDb = () => {
  */
 const runMigrations = async () => {
   if (!sqliteDb) {
+    // TODO: Make database name configurable (currently hardcoded to 'since.db')
     sqliteDb = SQLite.openDatabaseSync('since.db');
   }
 
@@ -41,6 +43,7 @@ const runMigrations = async () => {
       title TEXT NOT NULL,
       description TEXT,
       start_date INTEGER NOT NULL,
+      /* TODO: Replace hardcoded default 'days' with value from settings */
       show_time_as TEXT NOT NULL DEFAULT 'days',
       color TEXT,
       icon TEXT,
@@ -83,6 +86,7 @@ const runMigrations = async () => {
   sqliteDb.execSync(`
     CREATE TABLE IF NOT EXISTS settings (
       id TEXT PRIMARY KEY DEFAULT 'default',
+      /* TODO: Replace hardcoded defaults with constants from config (currently 'days', 'light', 'en') */
       default_show_time_as TEXT NOT NULL DEFAULT 'days',
       use_system_theme INTEGER NOT NULL DEFAULT 1,
       theme TEXT NOT NULL DEFAULT 'light',
@@ -115,6 +119,7 @@ export const initializeDatabase = async () => {
   const defaultSettings = await db.select().from(schema.settings).limit(1);
   
   if (defaultSettings.length === 0) {
+    // TODO: Replace hardcoded default values with constants from config/constants.ts
     await db.insert(schema.settings).values({
       id: 'default',
       defaultShowTimeAs: 'days',
