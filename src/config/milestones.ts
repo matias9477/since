@@ -1,4 +1,4 @@
-import type { TimeUnit, MilestoneConfig } from './types';
+import type { MilestoneConfig } from './types';
 
 /**
  * Predefined milestones that are automatically created for each event

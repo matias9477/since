@@ -1,4 +1,4 @@
-import { eq, desc, asc } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { getDb } from '@/db/client';
 import { events } from '@/db/schema';
 import type { Event, CreateEventInput, UpdateEventInput } from './types';

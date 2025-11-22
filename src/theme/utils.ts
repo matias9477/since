@@ -109,12 +109,13 @@ export const getThemeColors = (isDarkMode: boolean): ThemeColors => {
 /**
  * Hook to get the current theme mode and determine if dark mode should be used.
  * Takes into account the user's preference and system setting.
+ * useColorScheme() automatically detects OS theme and updates on changes.
  */
 export const useTheme = () => {
   const { themeMode } = useThemeStore();
-  const systemColorScheme = useColorScheme();
+  const systemColorScheme = useColorScheme(); // Detects OS theme
 
-  // Determine if dark mode should be used
+  // When themeMode is 'system', follow the OS
   const isDarkMode =
     themeMode === "dark" ||
     (themeMode === "system" && systemColorScheme === "dark");
@@ -122,7 +123,7 @@ export const useTheme = () => {
   return {
     themeMode,
     isDarkMode,
-    systemColorScheme,
+    systemColorScheme, // 'light' | 'dark' | null
     colors: getThemeColors(isDarkMode),
   };
 };

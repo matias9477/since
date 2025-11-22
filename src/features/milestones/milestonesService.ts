@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { getDb } from '@/db/client';
 import { milestones } from '@/db/schema';
 import { generateId } from '@/lib/id';

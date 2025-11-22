@@ -13,13 +13,12 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEventsStore } from "@/features/events/eventsStore";
 import { useMilestonesStore } from "@/features/milestones/milestonesStore";
 import { useRemindersStore } from "@/features/reminders/remindersStore";
-import { TIME_UNITS } from "@/config/constants";
 import { isMilestoneReached } from "@/config/milestones";
 import { DateTimeSelector } from "@/components/DateTimeSelector";
 import { useTheme } from "@/theme/index";
 import type { TimeUnit } from "@/config/types";
 import type { RootStackParamList } from "@/navigation/types";
-import { differenceInDays, differenceInHours, differenceInMinutes, differenceInSeconds } from "date-fns";
+import { differenceInHours, differenceInMinutes, differenceInSeconds } from "date-fns";
 import { formatTimeSince } from "@/lib/formatTimeSince";
 
 /**
@@ -80,9 +79,9 @@ export const EventDetailScreen: React.FC = () => {
   const route = useRoute<EventDetailScreenRouteProp>();
   const { eventId } = route.params;
   const { getEventById, loadEvents } = useEventsStore();
-  const { milestones, loadMilestones, getMilestonesByEventId } =
+  const { loadMilestones, getMilestonesByEventId } =
     useMilestonesStore();
-  const { reminders, loadReminders, getRemindersByEventId } =
+  const { loadReminders, getRemindersByEventId } =
     useRemindersStore();
   const { colors } = useTheme();
   const [refreshKey, setRefreshKey] = useState(0);
