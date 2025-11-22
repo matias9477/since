@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -29,7 +31,7 @@ export const EditEventScreen: React.FC = () => {
   const navigation = useNavigation<EditEventScreenNavigationProp>();
   const route = useRoute<EditEventScreenRouteProp>();
   const { eventId } = route.params || {};
-  const { events, createEvent, updateEvent, getEventById } = useEventsStore();
+  const { events, createEvent, updateEvent, deleteEvent, getEventById } = useEventsStore();
   const { colors } = useTheme();
 
   const [title, setTitle] = useState('');
@@ -37,6 +39,7 @@ export const EditEventScreen: React.FC = () => {
   const [startDate, setStartDate] = useState(new Date());
   const [showTimeAs, setShowTimeAs] = useState<TimeUnit>(DEFAULT_TIME_UNIT);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimeUnitPicker, setShowTimeUnitPicker] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const event = eventId ? getEventById(eventId) : null;
@@ -107,6 +110,35 @@ export const EditEventScreen: React.FC = () => {
     setShowDatePicker(false);
   };
 
+  const handleDelete = () => {
+    if (!eventId) return;
+    
+    // TODO: Replace hardcoded alert strings with i18n translations
+    Alert.alert(
+      'Delete Event',
+      'Are you sure you want to delete this event? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await deleteEvent(eventId);
+            if (success) {
+              // Reset navigation to Home instead of going back to EventDetail (which no longer exists)
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'MainTabs' }],
+              });
+            } else {
+              Alert.alert('Error', 'Failed to delete event');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <ScrollView style={styles.scrollView}>
@@ -157,8 +189,7 @@ export const EditEventScreen: React.FC = () => {
                 day: 'numeric',
               })}
             </Text>
-            {/* TODO: Replace hardcoded emoji with icon from theme/icons library */}
-            <Text style={styles.dateIcon}>📅</Text>
+            <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
           <DateTimePickerModal
             isVisible={showDatePicker}
@@ -176,33 +207,85 @@ export const EditEventScreen: React.FC = () => {
         <View style={styles.field}>
           {/* TODO: Replace hardcoded label with i18n translations */}
           <Text style={[styles.label, { color: colors.text }]}>Show Time As</Text>
-          <View style={styles.unitContainer}>
-            {TIME_UNITS.map((unit) => (
-              <TouchableOpacity
-                key={unit}
-                style={[
-                  styles.unitButton,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                  showTimeAs === unit && styles.unitButtonActive,
-                  showTimeAs === unit && { backgroundColor: colors.primary, borderColor: colors.primary },
-                ]}
-                onPress={() => setShowTimeAs(unit)}
-                accessibilityRole="button"
-                accessibilityLabel={`Select ${unit}`}
+          <TouchableOpacity
+            style={[styles.selectButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => setShowTimeUnitPicker(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Select time unit"
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.selectButtonText, { color: colors.text }]}>
+              {showTimeAs.charAt(0).toUpperCase() + showTimeAs.slice(1)}
+            </Text>
+            <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+          
+          {/* Time Unit Picker Modal */}
+          <Modal
+            visible={showTimeUnitPicker}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowTimeUnitPicker(false)}
+          >
+            <TouchableOpacity
+              style={styles.modalOverlay}
+              activeOpacity={1}
+              onPress={() => setShowTimeUnitPicker(false)}
+            >
+              <SafeAreaView
+                style={[styles.modalContent, { backgroundColor: colors.surface }]}
+                edges={['bottom']}
               >
-                <Text
-                  style={[
-                    styles.unitButtonText,
-                    { color: colors.text },
-                    showTimeAs === unit && styles.unitButtonTextActive,
-                    showTimeAs === unit && { color: '#FFFFFF' },
-                  ]}
+                <View
+                  style={{ flex: 1 }}
+                  onStartShouldSetResponder={() => true}
                 >
-                  {unit}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                  <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                    <Text style={[styles.modalTitle, { color: colors.text }]}>Select Time Unit</Text>
+                    <TouchableOpacity
+                      onPress={() => setShowTimeUnitPicker(false)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Close time unit picker"
+                    >
+                      <Ionicons name="close" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.modalOptions}>
+                    {TIME_UNITS.map((unit) => (
+                      <TouchableOpacity
+                        key={unit}
+                        style={[
+                          styles.optionItem,
+                          showTimeAs === unit && {
+                            backgroundColor: colors.primary + '20',
+                          },
+                        ]}
+                        onPress={() => {
+                          setShowTimeAs(unit);
+                          setShowTimeUnitPicker(false);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Select ${unit}`}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.optionText,
+                            { color: showTimeAs === unit ? colors.primary : colors.text },
+                          ]}
+                        >
+                          {unit.charAt(0).toUpperCase() + unit.slice(1)}
+                        </Text>
+                        {showTimeAs === unit && (
+                          <Ionicons name="checkmark" size={20} color={colors.primary} />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </SafeAreaView>
+            </TouchableOpacity>
+          </Modal>
         </View>
 
         <TouchableOpacity
@@ -221,6 +304,18 @@ export const EditEventScreen: React.FC = () => {
             {isLoading ? 'Saving...' : 'Save'}
           </Text>
         </TouchableOpacity>
+
+        {isEditing && (
+          <TouchableOpacity
+            style={[styles.deleteButton, { backgroundColor: colors.error }]}
+            onPress={handleDelete}
+            accessibilityRole="button"
+            accessibilityLabel="Delete event"
+          >
+            {/* TODO: Replace hardcoded button text with i18n translations */}
+            <Text style={styles.deleteButtonText}>Delete Event</Text>
+          </TouchableOpacity>
+        )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -267,30 +362,61 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
   },
-  dateIcon: {
-    fontSize: 18,
-    marginLeft: 8,
-  },
-  unitContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  unitButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  selectButton: {
     borderRadius: 8,
+    padding: 12,
     borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  unitButtonActive: {
-    // Colors applied inline
-  },
-  unitButtonText: {
-    fontSize: 14,
+  selectButtonText: {
+    fontSize: 16,
     textTransform: 'capitalize',
   },
-  unitButtonTextActive: {
-    // Colors applied inline
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '50%',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  modalOptions: {
+    padding: 8,
+    paddingBottom: 0,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: 8,
+    marginVertical: 4,
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: '500',
+    textTransform: 'capitalize',
   },
   saveButton: {
     borderRadius: 8,
@@ -302,6 +428,17 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  deleteButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',

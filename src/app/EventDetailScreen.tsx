@@ -5,9 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEventsStore } from '@/features/events/eventsStore';
@@ -27,7 +27,7 @@ export const EventDetailScreen: React.FC = () => {
   const navigation = useNavigation<EventDetailScreenNavigationProp>();
   const route = useRoute<EventDetailScreenRouteProp>();
   const { eventId } = route.params;
-  const { getEventById, deleteEvent, loadEvents } = useEventsStore();
+  const { getEventById, loadEvents } = useEventsStore();
   const { colors } = useTheme();
   const [refreshKey, setRefreshKey] = useState(0);
   const [previewUnit, setPreviewUnit] = useState<TimeUnit | null>(null);
@@ -40,6 +40,27 @@ export const EventDetailScreen: React.FC = () => {
       setPreviewUnit(event.showTimeAs);
     }
   }, [event, previewUnit]);
+
+  /**
+   * Cycles to the next time unit
+   */
+  const handleNextUnit = () => {
+    if (!event) return;
+    const currentIndex = TIME_UNITS.indexOf(previewUnit || event.showTimeAs);
+    const nextIndex = (currentIndex + 1) % TIME_UNITS.length;
+    setPreviewUnit(TIME_UNITS[nextIndex]);
+  };
+
+  /**
+   * Cycles to the previous time unit
+   */
+  const handlePreviousUnit = () => {
+    if (!event) return;
+    const currentIndex = TIME_UNITS.indexOf(previewUnit || event.showTimeAs);
+    const prevIndex = (currentIndex - 1 + TIME_UNITS.length) % TIME_UNITS.length;
+    setPreviewUnit(TIME_UNITS[prevIndex]);
+  };
+
 
   useEffect(() => {
     if (!event) {
@@ -80,29 +101,6 @@ export const EventDetailScreen: React.FC = () => {
     navigation.navigate('EditEvent', { eventId });
   };
 
-  const handleDelete = () => {
-    // TODO: Replace hardcoded alert strings with i18n translations
-    Alert.alert(
-      'Delete Event',
-      'Are you sure you want to delete this event?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const success = await deleteEvent(eventId);
-            if (success) {
-              navigation.goBack();
-            } else {
-              Alert.alert('Error', 'Failed to delete event');
-            }
-          },
-        },
-      ]
-    );
-  };
-
   if (!event) {
     return (
       <SafeAreaView style={[styles.container, styles.centerContainer, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
@@ -117,62 +115,37 @@ export const EventDetailScreen: React.FC = () => {
       <ScrollView style={styles.scrollView} key={refreshKey}>
       <View style={styles.content}>
         <View style={[styles.timeDisplay, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
-          <TimeSinceLabel
-            startDate={event.startDate}
-            unit={previewUnit || event.showTimeAs}
-            style={[styles.timeText, { color: colors.primary }]}
-          />
-          <View style={styles.unitSelector}>
-            <Text style={[styles.unitSelectorLabel, { color: colors.textSecondary }]}>
-              Preview as:
-            </Text>
-            <View style={styles.unitContainer}>
-              {TIME_UNITS.map((unit) => {
-                const isSelected = (previewUnit || event.showTimeAs) === unit;
-                const isActualUnit = event.showTimeAs === unit;
-                return (
-                  <TouchableOpacity
-                    key={unit}
-                    style={[
-                      styles.unitButton,
-                      { backgroundColor: colors.surface, borderColor: colors.border, marginHorizontal: 4, marginVertical: 4 },
-                      isSelected && styles.unitButtonActive,
-                      isSelected && { backgroundColor: colors.primary, borderColor: colors.primary },
-                    ]}
-                    onPress={() => setPreviewUnit(unit)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Preview time as ${unit}`}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.unitButtonText,
-                        { color: colors.text },
-                        isSelected && styles.unitButtonTextActive,
-                        isSelected && { color: '#FFFFFF' },
-                      ]}
-                    >
-                      {unit}
-                      {isActualUnit && !isSelected && (
-                        <Text style={[styles.unitButtonText, { color: colors.textSecondary }]}> *</Text>
-                      )}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+          <View style={styles.timeDisplayRow}>
+            <TouchableOpacity
+              style={styles.arrowButton}
+              onPress={handlePreviousUnit}
+              accessibilityRole="button"
+              accessibilityLabel="Previous time unit"
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+            
+            <View style={styles.timeTextContainer}>
+              <TimeSinceLabel
+                startDate={event.startDate}
+                unit={previewUnit || event.showTimeAs}
+                style={[styles.timeText, { color: colors.primary }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              />
             </View>
-            {previewUnit !== event.showTimeAs && (
-              <TouchableOpacity
-                style={styles.resetButton}
-                onPress={() => setPreviewUnit(event.showTimeAs)}
-                accessibilityRole="button"
-                accessibilityLabel="Reset to actual display unit"
-              >
-                <Text style={[styles.resetButtonText, { color: colors.primary }]}>
-                  Reset to actual ({event.showTimeAs})
-                </Text>
-              </TouchableOpacity>
-            )}
+            
+            <TouchableOpacity
+              style={styles.arrowButton}
+              onPress={handleNextUnit}
+              accessibilityRole="button"
+              accessibilityLabel="Next time unit"
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -207,16 +180,6 @@ export const EventDetailScreen: React.FC = () => {
             Reminders feature coming soon
           </Text>
         </View>
-
-        <TouchableOpacity
-          style={[styles.deleteButton, { backgroundColor: colors.error }]}
-          onPress={handleDelete}
-          accessibilityRole="button"
-          accessibilityLabel="Delete event"
-        >
-          {/* TODO: Replace hardcoded button text with i18n translations */}
-          <Text style={styles.deleteButtonText}>Delete Event</Text>
-        </TouchableOpacity>
       </View>
       </ScrollView>
     </SafeAreaView>
@@ -243,58 +206,34 @@ const styles = StyleSheet.create({
   },
   timeDisplay: {
     borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
+    padding: 20,
     marginBottom: 16,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  timeText: {
-    fontSize: 32,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-  unitSelector: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  unitSelectorLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  unitContainer: {
+  timeDisplayRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  arrowButton: {
+    padding: 8,
+    minWidth: 40,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  unitButton: {
+  timeTextContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
   },
-  unitButtonActive: {
-    // Colors applied inline
-  },
-  unitButtonText: {
-    fontSize: 12,
-    fontWeight: '500',
-    textTransform: 'capitalize',
-  },
-  unitButtonTextActive: {
-    // Colors applied inline
-  },
-  resetButton: {
-    marginTop: 12,
-    paddingVertical: 4,
-  },
-  resetButtonText: {
-    fontSize: 12,
-    fontWeight: '500',
+  timeText: {
+    fontSize: 28,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   section: {
     borderRadius: 8,
@@ -332,17 +271,6 @@ const styles = StyleSheet.create({
   },
   headerButtonText: {
     fontSize: 16,
-  },
-  deleteButton: {
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  deleteButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
 

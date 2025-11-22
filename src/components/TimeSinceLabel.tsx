@@ -8,6 +8,9 @@ interface TimeSinceLabelProps {
   startDate: Date;
   unit: TimeUnit;
   style?: object;
+  numberOfLines?: number;
+  adjustsFontSizeToFit?: boolean;
+  minimumFontScale?: number;
 }
 
 /**
@@ -17,10 +20,22 @@ export const TimeSinceLabel: React.FC<TimeSinceLabelProps> = ({
   startDate,
   unit,
   style,
+  numberOfLines,
+  adjustsFontSizeToFit,
+  minimumFontScale,
 }) => {
   const { colors } = useTheme();
   const formatted = formatTimeSince(startDate, unit);
-  return <Text style={[styles.text, { color: colors.text }, style]}>{formatted}</Text>;
+  return (
+    <Text
+      style={[styles.text, { color: colors.text }, style]}
+      numberOfLines={numberOfLines}
+      adjustsFontSizeToFit={adjustsFontSizeToFit}
+      minimumFontScale={minimumFontScale}
+    >
+      {formatted}
+    </Text>
+  );
 };
 
 const styles = StyleSheet.create({
