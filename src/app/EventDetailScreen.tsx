@@ -87,6 +87,7 @@ export const EventDetailScreen: React.FC = () => {
   const { colors } = useTheme();
   const [refreshKey, setRefreshKey] = useState(0);
   const [previewUnit, setPreviewUnit] = useState<ExtendedTimeUnit | null>(null);
+  const [showAllMilestones, setShowAllMilestones] = useState(false);
 
   const event = getEventById(eventId);
   const eventMilestones = getMilestonesByEventId(eventId);
@@ -305,86 +306,6 @@ export const EventDetailScreen: React.FC = () => {
               <Text
                 style={[styles.sectionTitle, { color: colors.textSecondary }]}
               >
-                Milestones
-              </Text>
-              <Ionicons name="trophy" size={18} color={colors.textSecondary} />
-            </View>
-            {eventMilestones.length === 0 ? (
-              <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-                No milestones yet
-              </Text>
-            ) : (
-              <View style={styles.milestonesList}>
-                {eventMilestones.map((milestone) => {
-                  const reached =
-                    milestone.reachedAt !== null ||
-                    (event &&
-                      isMilestoneReached(
-                        {
-                          label: milestone.label,
-                          targetAmount: milestone.targetAmount,
-                          targetUnit: milestone.targetUnit,
-                          isPredefined: true,
-                        },
-                        event.startDate
-                      ));
-                  return (
-                    <View
-                      key={milestone.id}
-                      style={[
-                        styles.milestoneItem,
-                        reached && {
-                          backgroundColor: colors.primary + "15",
-                          borderLeftColor: colors.primary,
-                        },
-                      ]}
-                    >
-                      <View style={styles.milestoneContent}>
-                        <View style={styles.milestoneHeader}>
-                          <Text
-                            style={[
-                              styles.milestoneLabel,
-                              { color: colors.text },
-                            ]}
-                          >
-                            {milestone.label}
-                          </Text>
-                          {reached && (
-                            <Ionicons
-                              name="checkmark-circle"
-                              size={20}
-                              color={colors.primary}
-                            />
-                          )}
-                        </View>
-                        <Text
-                          style={[
-                            styles.milestoneTarget,
-                            { color: colors.textSecondary },
-                          ]}
-                        >
-                          {milestone.targetAmount} {milestone.targetUnit}
-                          {milestone.reachedAt && (
-                            <Text style={{ color: colors.primary }}>
-                              {" "}
-                              • Reached{" "}
-                              {milestone.reachedAt.toLocaleDateString()}
-                            </Text>
-                          )}
-                        </Text>
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-
-          <View style={[styles.section, { backgroundColor: colors.surface }]}>
-            <View style={styles.sectionHeader}>
-              <Text
-                style={[styles.sectionTitle, { color: colors.textSecondary }]}
-              >
                 Reminders
               </Text>
               <Ionicons
@@ -456,6 +377,119 @@ export const EventDetailScreen: React.FC = () => {
                   </View>
                 ))}
               </View>
+            )}
+          </View>
+
+          <View style={[styles.section, { backgroundColor: colors.surface }]}>
+            <View style={styles.sectionHeader}>
+              <Text
+                style={[styles.sectionTitle, { color: colors.textSecondary }]}
+              >
+                Milestones
+              </Text>
+              <Ionicons name="trophy" size={18} color={colors.textSecondary} />
+            </View>
+            {eventMilestones.length === 0 ? (
+              <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
+                No milestones yet
+              </Text>
+            ) : (
+              <>
+                <View style={styles.milestonesList}>
+                  {(showAllMilestones
+                    ? eventMilestones
+                    : eventMilestones.slice(0, 5)
+                  ).map((milestone) => {
+                    const reached =
+                      milestone.reachedAt !== null ||
+                      (event &&
+                        isMilestoneReached(
+                          {
+                            label: milestone.label,
+                            targetAmount: milestone.targetAmount,
+                            targetUnit: milestone.targetUnit,
+                            isPredefined: true,
+                          },
+                          event.startDate
+                        ));
+                    return (
+                      <View
+                        key={milestone.id}
+                        style={[
+                          styles.milestoneItem,
+                          {
+                            backgroundColor: reached
+                              ? colors.primary + "15"
+                              : colors.background,
+                            borderLeftColor: reached
+                              ? colors.primary
+                              : colors.border,
+                          },
+                        ]}
+                      >
+                        <View style={styles.milestoneContent}>
+                          <View style={styles.milestoneHeader}>
+                            <Text
+                              style={[
+                                styles.milestoneLabel,
+                                { color: colors.text },
+                              ]}
+                            >
+                              {milestone.label}
+                            </Text>
+                            {reached && (
+                              <Ionicons
+                                name="checkmark-circle"
+                                size={20}
+                                color={colors.primary}
+                              />
+                            )}
+                          </View>
+                          <Text
+                            style={[
+                              styles.milestoneTarget,
+                              { color: colors.textSecondary },
+                            ]}
+                          >
+                            {milestone.targetAmount} {milestone.targetUnit}
+                            {milestone.reachedAt && (
+                              <Text style={{ color: colors.primary }}>
+                                {" "}
+                                • Reached{" "}
+                                {milestone.reachedAt.toLocaleDateString()}
+                              </Text>
+                            )}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+                {eventMilestones.length > 5 && (
+                  <TouchableOpacity
+                    onPress={() => setShowAllMilestones(!showAllMilestones)}
+                    style={styles.showMoreButton}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      showAllMilestones ? "Show fewer milestones" : "Show all milestones"
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.showMoreText,
+                        { color: colors.primary },
+                      ]}
+                    >
+                      {showAllMilestones ? "Show Less" : `Show All (${eventMilestones.length})`}
+                    </Text>
+                    <Ionicons
+                      name={showAllMilestones ? "chevron-up" : "chevron-down"}
+                      size={18}
+                      color={colors.primary}
+                    />
+                  </TouchableOpacity>
+                )}
+              </>
             )}
           </View>
         </View>
@@ -542,8 +576,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     borderLeftWidth: 3,
-    borderLeftColor: "transparent",
-    backgroundColor: "#f5f5f5",
+  },
+  showMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    marginTop: 8,
+    gap: 6,
+  },
+  showMoreText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   milestoneContent: {
     flex: 1,
