@@ -1,64 +1,91 @@
-import { differenceInDays, differenceInWeeks, differenceInMonths, differenceInYears } from 'date-fns';
+import { differenceInDays, differenceInMonths, differenceInYears } from 'date-fns';
 import type { TimeUnit } from '@/config/types';
 
 /**
  * Formats the time elapsed since a given start date in the specified unit
+ * Uses compound units (e.g., "1 week and 1 day" instead of "1.1 weeks")
  *
  * @param startDate - The start date to calculate time from
  * @param unit - The unit to display (days, weeks, months, years)
- * @returns A formatted string representing the time elapsed (e.g., "123 days", "3.5 weeks")
+ * @returns A formatted string representing the time elapsed (e.g., "123 days", "1 week and 1 day")
  */
 export const formatTimeSince = (startDate: Date, unit: TimeUnit): string => {
   const now = new Date();
-  let value: number;
-  let unitLabel: string;
+  const totalDays = differenceInDays(now, startDate);
 
   switch (unit) {
     case 'days': {
-      value = differenceInDays(now, startDate);
       // TODO: Replace hardcoded unit labels with i18n translations
-      unitLabel = value === 1 ? 'day' : 'days';
-      break;
+      const unitLabel = totalDays === 1 ? 'day' : 'days';
+      return `${totalDays} ${unitLabel}`;
     }
+
     case 'weeks': {
-      const days = differenceInDays(now, startDate);
-      // TODO: Make decimal precision configurable (currently hardcoded to 1 decimal place)
-      value = Math.round((days / 7) * 10) / 10; // Round to 1 decimal place
+      const weeks = Math.floor(totalDays / 7);
+      const remainingDays = totalDays % 7;
+
       // TODO: Replace hardcoded unit labels with i18n translations
-      unitLabel = value === 1 ? 'week' : 'weeks';
-      break;
+      if (weeks === 0) {
+        const unitLabel = remainingDays === 1 ? 'day' : 'days';
+        return `${remainingDays} ${unitLabel}`;
+      }
+      if (remainingDays === 0) {
+        const unitLabel = weeks === 1 ? 'week' : 'weeks';
+        return `${weeks} ${unitLabel}`;
+      }
+      const weeksLabel = weeks === 1 ? 'week' : 'weeks';
+      const daysLabel = remainingDays === 1 ? 'day' : 'days';
+      return `${weeks} ${weeksLabel} and ${remainingDays} ${daysLabel}`;
     }
+
     case 'months': {
-      const days = differenceInDays(now, startDate);
-      // TODO: Make average days per month configurable or use more accurate calculation (currently hardcoded to 30.44)
-      value = Math.round((days / 30.44) * 10) / 10; // Average days per month
+      const totalMonths = differenceInMonths(now, startDate);
+      
+      // Calculate remaining days after full months
+      const monthsStartDate = new Date(startDate);
+      monthsStartDate.setMonth(monthsStartDate.getMonth() + totalMonths);
+      const remainingDays = differenceInDays(now, monthsStartDate);
+
       // TODO: Replace hardcoded unit labels with i18n translations
-      unitLabel = value === 1 ? 'month' : 'months';
-      break;
+      if (totalMonths === 0) {
+        // Less than a month, show days
+        const daysLabel = remainingDays === 1 ? 'day' : 'days';
+        return `${remainingDays} ${daysLabel}`;
+      }
+      if (remainingDays === 0) {
+        // Exact months, no remaining days
+        const monthsLabel = totalMonths === 1 ? 'month' : 'months';
+        return `${totalMonths} ${monthsLabel}`;
+      }
+      
+      // Months and days
+      const monthsLabel = totalMonths === 1 ? 'month' : 'months';
+      const daysLabel = remainingDays === 1 ? 'day' : 'days';
+      return `${totalMonths} ${monthsLabel} and ${remainingDays} ${daysLabel}`;
     }
+
     case 'years': {
       const years = differenceInYears(now, startDate);
-      const remainingMonths = differenceInMonths(now, startDate) % 12;
+      const totalMonths = differenceInMonths(now, startDate);
+      const remainingMonths = totalMonths % 12;
       
-      if (remainingMonths === 0) {
-        value = years;
-        // TODO: Replace hardcoded unit labels with i18n translations
-        unitLabel = years === 1 ? 'year' : 'years';
-      } else {
-        // Format as "X years Y months"
-        // TODO: Replace hardcoded unit labels with i18n translations
-        return `${years} ${years === 1 ? 'year' : 'years'} ${remainingMonths} ${remainingMonths === 1 ? 'month' : 'months'}`;
-      }
-      break;
-    }
-    default: {
-      const days = differenceInDays(now, startDate);
-      value = days;
       // TODO: Replace hardcoded unit labels with i18n translations
-      unitLabel = value === 1 ? 'day' : 'days';
+      if (remainingMonths === 0) {
+        const unitLabel = years === 1 ? 'year' : 'years';
+        return `${years} ${unitLabel}`;
+      }
+      
+      // Format as "X years and Y months"
+      const yearsLabel = years === 1 ? 'year' : 'years';
+      const monthsLabel = remainingMonths === 1 ? 'month' : 'months';
+      return `${years} ${yearsLabel} and ${remainingMonths} ${monthsLabel}`;
+    }
+
+    default: {
+      // TODO: Replace hardcoded unit labels with i18n translations
+      const unitLabel = totalDays === 1 ? 'day' : 'days';
+      return `${totalDays} ${unitLabel}`;
     }
   }
-
-  return `${value} ${unitLabel}`;
 };
 

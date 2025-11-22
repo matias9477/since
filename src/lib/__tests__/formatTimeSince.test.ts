@@ -40,9 +40,14 @@ describe('formatTimeSince', () => {
       expect(formatTimeSince(startDate, 'weeks')).toBe('2 weeks');
     });
 
-    it('should format decimal weeks correctly', () => {
+    it('should format weeks with remaining days correctly', () => {
       const startDate = new Date('2024-01-12T12:00:00Z');
-      expect(formatTimeSince(startDate, 'weeks')).toBe('0.4 weeks');
+      expect(formatTimeSince(startDate, 'weeks')).toBe('0 weeks and 3 days');
+    });
+
+    it('should format weeks and days correctly', () => {
+      const startDate = new Date('2024-01-06T12:00:00Z');
+      expect(formatTimeSince(startDate, 'weeks')).toBe('1 week and 2 days');
     });
   });
 
@@ -57,10 +62,16 @@ describe('formatTimeSince', () => {
       expect(formatTimeSince(startDate, 'months')).toBe('2 months');
     });
 
-    it('should format decimal months correctly', () => {
+    it('should format months with remaining days correctly', () => {
       const startDate = new Date('2023-12-20T12:00:00Z');
       const result = formatTimeSince(startDate, 'months');
-      expect(result).toMatch(/^\d+\.\d+ months?$/);
+      expect(result).toMatch(/^\d+ months? and \d+ days?$/);
+    });
+
+    it('should format months and days correctly', () => {
+      const startDate = new Date('2023-12-10T12:00:00Z');
+      const result = formatTimeSince(startDate, 'months');
+      expect(result).toMatch(/^\d+ months? and \d+ days?$/);
     });
   });
 

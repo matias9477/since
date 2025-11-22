@@ -100,6 +100,12 @@ export const SettingsScreen: React.FC = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Customize your experience
+            </Text>
+          </View>
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Appearance
@@ -161,6 +167,19 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+  },
+  header: {
+    marginBottom: 32,
+    paddingHorizontal: 4,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    lineHeight: 22,
   },
   section: {
     marginBottom: 24,

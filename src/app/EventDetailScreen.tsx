@@ -12,7 +12,9 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEventsStore } from '@/features/events/eventsStore';
 import { TimeSinceLabel } from '@/components/TimeSinceLabel';
+import { TIME_UNITS } from '@/config/constants';
 import { useTheme } from '@/theme';
+import type { TimeUnit } from '@/config/types';
 import type { RootStackParamList } from '@/navigation/types';
 
 type EventDetailScreenRouteProp = RouteProp<RootStackParamList, 'EventDetail'>;
@@ -28,8 +30,16 @@ export const EventDetailScreen: React.FC = () => {
   const { getEventById, deleteEvent, loadEvents } = useEventsStore();
   const { colors } = useTheme();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [previewUnit, setPreviewUnit] = useState<TimeUnit | null>(null);
 
   const event = getEventById(eventId);
+
+  // Initialize preview unit with event's actual unit when event loads
+  useEffect(() => {
+    if (event && previewUnit === null) {
+      setPreviewUnit(event.showTimeAs);
+    }
+  }, [event, previewUnit]);
 
   useEffect(() => {
     if (!event) {
@@ -109,9 +119,61 @@ export const EventDetailScreen: React.FC = () => {
         <View style={[styles.timeDisplay, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
           <TimeSinceLabel
             startDate={event.startDate}
-            unit={event.showTimeAs}
+            unit={previewUnit || event.showTimeAs}
             style={[styles.timeText, { color: colors.primary }]}
           />
+          <View style={styles.unitSelector}>
+            <Text style={[styles.unitSelectorLabel, { color: colors.textSecondary }]}>
+              Preview as:
+            </Text>
+            <View style={styles.unitContainer}>
+              {TIME_UNITS.map((unit) => {
+                const isSelected = (previewUnit || event.showTimeAs) === unit;
+                const isActualUnit = event.showTimeAs === unit;
+                return (
+                  <TouchableOpacity
+                    key={unit}
+                    style={[
+                      styles.unitButton,
+                      { backgroundColor: colors.surface, borderColor: colors.border, marginHorizontal: 4, marginVertical: 4 },
+                      isSelected && styles.unitButtonActive,
+                      isSelected && { backgroundColor: colors.primary, borderColor: colors.primary },
+                    ]}
+                    onPress={() => setPreviewUnit(unit)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Preview time as ${unit}`}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.unitButtonText,
+                        { color: colors.text },
+                        isSelected && styles.unitButtonTextActive,
+                        isSelected && { color: '#FFFFFF' },
+                      ]}
+                    >
+                      {unit}
+                      {isActualUnit && !isSelected && (
+                        <Text style={[styles.unitButtonText, { color: colors.textSecondary }]}> *</Text>
+                      )}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {previewUnit !== event.showTimeAs && (
+              <TouchableOpacity
+                style={styles.resetButton}
+                onPress={() => setPreviewUnit(event.showTimeAs)}
+                accessibilityRole="button"
+                accessibilityLabel="Reset to actual display unit"
+              >
+                <Text style={[styles.resetButtonText, { color: colors.primary }]}>
+                  Reset to actual ({event.showTimeAs})
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         <View style={[styles.section, { backgroundColor: colors.surface }]}>
@@ -192,6 +254,47 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 32,
     fontWeight: '700',
+    marginBottom: 16,
+  },
+  unitSelector: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  unitSelectorLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  unitContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  unitButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  unitButtonActive: {
+    // Colors applied inline
+  },
+  unitButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'capitalize',
+  },
+  unitButtonTextActive: {
+    // Colors applied inline
+  },
+  resetButton: {
+    marginTop: 12,
+    paddingVertical: 4,
+  },
+  resetButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   section: {
     borderRadius: 8,

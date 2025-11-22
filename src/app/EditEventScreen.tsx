@@ -175,7 +175,7 @@ export const EditEventScreen: React.FC = () => {
 
         <View style={styles.field}>
           {/* TODO: Replace hardcoded label with i18n translations */}
-          <Text style={styles.label}>Show Time As</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Show Time As</Text>
           <View style={styles.unitContainer}>
             {TIME_UNITS.map((unit) => (
               <TouchableOpacity
