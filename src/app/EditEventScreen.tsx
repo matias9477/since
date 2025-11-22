@@ -130,21 +130,13 @@ export const EditEventScreen: React.FC = () => {
         ...(icon && { icon }),
       };
 
-      let savedEventId = eventId;
       if (isEditing && eventId) {
         await updateEvent(eventId, input);
-      } else {
-        const newEvent = await createEvent(input);
-        if (newEvent) {
-          savedEventId = newEvent.id;
-        }
-      }
-
-      // If we just created a new event, navigate to edit mode so user can set reminders
-      if (!isEditing && savedEventId) {
-        navigation.replace("EditEvent", { eventId: savedEventId });
-      } else {
         navigation.goBack();
+      } else {
+        await createEvent(input);
+        // Navigate to home after creating a new event
+        navigation.navigate("MainTabs");
       }
     } catch (error) {
       console.error("Error saving event:", error);
