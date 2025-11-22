@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { DateTimePicker } from "@/components/DateTimePicker";
 import { useEventsStore } from "@/features/events/eventsStore";
 import { useRemindersStore } from "@/features/reminders/remindersStore";
 import {
@@ -23,7 +23,8 @@ import {
   REMINDER_TYPES,
 } from "@/config/constants";
 import { EVENT_ICONS, type EventIconName } from "@/config/eventIcons";
-import { PickerModal, type PickerOption } from "@/components/PickerModal";
+import { PickerModal } from "@/components/PickerModal";
+import { DateTimeSelector } from "@/components/DateTimeSelector";
 import { useTheme } from "../theme";
 import type {
   TimeUnit,
@@ -59,14 +60,13 @@ export const EditEventScreen: React.FC = () => {
     deleteReminder,
     getRemindersByEventId,
   } = useRemindersStore();
-  const { colors, isDarkMode } = useTheme();
+  const { colors } = useTheme();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState(new Date());
   const [showTimeAs, setShowTimeAs] = useState<TimeUnit>(DEFAULT_TIME_UNIT);
   const [icon, setIcon] = useState<EventIconName | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimeUnitPicker, setShowTimeUnitPicker] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
@@ -156,21 +156,6 @@ export const EditEventScreen: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleDateConfirm = (selectedDate: Date) => {
-    if (
-      selectedDate &&
-      selectedDate instanceof Date &&
-      !isNaN(selectedDate.getTime())
-    ) {
-      setStartDate(selectedDate);
-    }
-    setShowDatePicker(false);
-  };
-
-  const handleDateCancel = () => {
-    setShowDatePicker(false);
   };
 
   const handleReminderDateConfirm = (selectedDate: Date) => {
@@ -343,52 +328,12 @@ export const EditEventScreen: React.FC = () => {
             />
           </View>
 
-          <View style={styles.field}>
-            {/* TODO: Replace hardcoded label with i18n translations */}
-            <Text style={[styles.label, { color: colors.text }]}>
-              Start Date
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.dateButton,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-              onPress={() => setShowDatePicker(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Select start date"
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.dateText, { color: colors.text }]}>
-                {/* TODO: Replace hardcoded locale 'en-US' with user's language preference from settings */}
-                {startDate.toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}{" "}
-                at {startDate.toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </Text>
-              <Ionicons
-                name="calendar-outline"
-                size={20}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-            <DateTimePickerModal
-              isVisible={showDatePicker}
-              mode="datetime"
-              date={startDate}
-              onConfirm={handleDateConfirm}
-              onCancel={handleDateCancel}
-              maximumDate={new Date()}
-              display="spinner"
-              themeVariant={isDarkMode ? "dark" : "light"}
-              accentColor={colors.primary}
-              textColor={colors.text}
-            />
-          </View>
+          <DateTimeSelector
+            date={startDate}
+            onDateChange={setStartDate}
+            label="Start Date"
+            maximumDate={new Date()}
+          />
 
           <View style={styles.field}>
             {/* TODO: Replace hardcoded label with i18n translations */}
@@ -449,7 +394,9 @@ export const EditEventScreen: React.FC = () => {
                           fontSize: 16,
                           fontWeight: "500",
                           textTransform: "capitalize",
-                          color: isSelected ? themeColors.primary : themeColors.text,
+                          color: isSelected
+                            ? themeColors.primary
+                            : themeColors.text,
                         }}
                       >
                         No icon
@@ -853,16 +800,11 @@ export const EditEventScreen: React.FC = () => {
                         color={colors.textSecondary}
                       />
                     </TouchableOpacity>
-                    <DateTimePickerModal
+                    <DateTimePicker
                       isVisible={showReminderDatePicker}
-                      mode="datetime"
                       date={reminderDate}
                       onConfirm={handleReminderDateConfirm}
                       onCancel={handleReminderDateCancel}
-                      display="spinner"
-                      themeVariant={isDarkMode ? "dark" : "light"}
-                      accentColor={colors.primary}
-                      textColor={colors.text}
                     />
                   </View>
                 )}

@@ -15,6 +15,7 @@ import { useMilestonesStore } from "@/features/milestones/milestonesStore";
 import { useRemindersStore } from "@/features/reminders/remindersStore";
 import { TIME_UNITS } from "@/config/constants";
 import { isMilestoneReached } from "@/config/milestones";
+import { DateTimeSelector } from "@/components/DateTimeSelector";
 import { useTheme } from "@/theme/index";
 import type { TimeUnit } from "@/config/types";
 import type { RootStackParamList } from "@/navigation/types";
@@ -288,11 +289,12 @@ export const EventDetailScreen: React.FC = () => {
                 {event.description}
               </Text>
             )}
-            <Text style={[styles.metaText, { color: colors.textTertiary }]}>
-              Started:{" "}
-              {/* TODO: Replace hardcoded toLocaleDateString() with locale from user settings */}
-              {event.startDate.toLocaleDateString()}
-            </Text>
+            <DateTimeSelector
+              date={event.startDate}
+              onDateChange={() => {}} // Read-only, no-op
+              label="Started"
+              editable={false}
+            />
             <Text style={[styles.metaText, { color: colors.textTertiary }]}>
               Displaying as: {event.showTimeAs}
             </Text>
