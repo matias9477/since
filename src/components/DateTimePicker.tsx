@@ -32,6 +32,9 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   // Use en_GB locale for time mode to enable 24-hour format
   const locale = mode === "time" ? "en_GB" : "en_US";
 
+  // Don't apply date constraints to time picker
+  const shouldApplyDateConstraints = mode !== "time";
+
   return (
     <DateTimePickerModal
       isVisible={isVisible}
@@ -39,8 +42,8 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
       date={date}
       onConfirm={onConfirm}
       onCancel={onCancel}
-      {...(maximumDate && { maximumDate })}
-      {...(minimumDate && { minimumDate })}
+      {...(shouldApplyDateConstraints && maximumDate && { maximumDate })}
+      {...(shouldApplyDateConstraints && minimumDate && { minimumDate })}
       display={display}
       themeVariant={isDarkMode ? "dark" : "light"}
       accentColor={colors.primary}
