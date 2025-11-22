@@ -235,6 +235,102 @@ export const sendTestNotification = async (): Promise<string> => {
 };
 
 /**
+ * Send a test milestone notification immediately
+ * Useful for testing milestone notification format
+ */
+export const sendTestMilestoneNotification = async (
+  eventTitle: string = 'Test Event'
+): Promise<string> => {
+  if (isExpoGo()) return '';
+
+  try {
+    // Request permissions if not already granted
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== 'granted') {
+      console.warn('[Notifications] Permission not granted, cannot send test milestone notification');
+      return '';
+    }
+
+    const identifier = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '🎉 Milestone Reached!',
+        body: `It's been 1 Year since ${eventTitle}`,
+        data: {
+          type: 'milestone',
+          eventId: 'test-event-id',
+          milestoneId: 'test-milestone-id',
+          milestoneLabel: '1 Year',
+        },
+        sound: true,
+      },
+      trigger: null, // Send immediately
+    });
+
+    console.log('[Notifications] Sent test milestone notification');
+    return identifier;
+  } catch (error) {
+    console.error('Error sending test milestone notification:', error);
+    return '';
+  }
+};
+
+/**
+ * Send a test reminder notification immediately
+ * Useful for testing reminder notification format
+ */
+export const sendTestReminderNotification = async (
+  eventTitle: string = 'Test Event',
+  reminderType: 'one-time' | 'recurring' = 'one-time'
+): Promise<string> => {
+  if (isExpoGo()) return '';
+
+  try {
+    // Request permissions if not already granted
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== 'granted') {
+      console.warn('[Notifications] Permission not granted, cannot send test reminder notification');
+      return '';
+    }
+
+    const reminderTypeLabel = reminderType === 'recurring' ? 'Recurring Reminder' : 'Reminder';
+    const identifier = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: reminderTypeLabel,
+        body: `Don't forget: ${eventTitle}`,
+        data: {
+          type: 'reminder',
+          eventId: 'test-event-id',
+          reminderId: 'test-reminder-id',
+          reminderType,
+        },
+        sound: true,
+      },
+      trigger: null, // Send immediately
+    });
+
+    console.log('[Notifications] Sent test reminder notification');
+    return identifier;
+  } catch (error) {
+    console.error('Error sending test reminder notification:', error);
+    return '';
+  }
+};
+
+/**
  * Check if notifications are enabled
  */
 export const areNotificationsEnabled = async (): Promise<boolean> => {

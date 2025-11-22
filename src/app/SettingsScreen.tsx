@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
@@ -7,6 +7,11 @@ import { useThemeStore } from '@/store/themeStore';
 import { getAppVersion } from '@/utils/version';
 import { PrivacyPolicyModal } from '@/components/PrivacyPolicyModal';
 import { TermsOfServiceModal } from '@/components/TermsOfServiceModal';
+import {
+  sendTestNotification,
+  sendTestMilestoneNotification,
+  sendTestReminderNotification,
+} from '@/utils/notifications';
 
 /**
  * Settings screen for app configuration
@@ -16,6 +21,7 @@ export const SettingsScreen: React.FC = () => {
   const { setThemeMode } = useThemeStore();
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const [showTermsOfService, setShowTermsOfService] = useState(false);
+  const [isTestingNotification, setIsTestingNotification] = useState(false);
 
   /**
    * Handles theme mode toggle, cycling through: system → light → dark → system
@@ -41,6 +47,45 @@ export const SettingsScreen: React.FC = () => {
       return 'Light mode';
     }
     return 'Dark mode';
+  };
+
+  /**
+   * Handles test notification button press
+   */
+  const handleTestNotification = async (type: 'basic' | 'milestone' | 'reminder') => {
+    if (isTestingNotification) return;
+
+    setIsTestingNotification(true);
+    try {
+      let identifier = '';
+      switch (type) {
+        case 'basic':
+          identifier = await sendTestNotification();
+          break;
+        case 'milestone':
+          identifier = await sendTestMilestoneNotification('Test Event');
+          break;
+        case 'reminder':
+          identifier = await sendTestReminderNotification('Test Event', 'one-time');
+          break;
+      }
+
+      if (identifier) {
+        Alert.alert('Success', 'Test notification sent! Check your notifications.');
+      } else {
+        Alert.alert(
+          'Error',
+          'Failed to send test notification. Make sure notifications are enabled in your device settings.'
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to send test notification'
+      );
+    } finally {
+      setIsTestingNotification(false);
+    }
   };
 
   /**
@@ -144,6 +189,65 @@ export const SettingsScreen: React.FC = () => {
               'information-circle-outline'
             )}
           </View>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Developer
+            </Text>
+            <Text style={[styles.devSubtitle, { color: colors.textSecondary }]}>
+              Test notification functionality
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.devButton,
+                { backgroundColor: colors.surface },
+                isTestingNotification && styles.devButtonDisabled,
+              ]}
+              onPress={() => handleTestNotification('basic')}
+              disabled={isTestingNotification}
+              accessibilityRole="button"
+              accessibilityLabel="Test basic notification"
+              activeOpacity={0.7}
+            >
+              <Ionicons name="notifications-outline" size={20} color={colors.primary} />
+              <Text style={[styles.devButtonText, { color: colors.text }]}>
+                Test Basic Notification
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.devButton,
+                { backgroundColor: colors.surface },
+                isTestingNotification && styles.devButtonDisabled,
+              ]}
+              onPress={() => handleTestNotification('milestone')}
+              disabled={isTestingNotification}
+              accessibilityRole="button"
+              accessibilityLabel="Test milestone notification"
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trophy-outline" size={20} color={colors.primary} />
+              <Text style={[styles.devButtonText, { color: colors.text }]}>
+                Test Milestone Notification
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.devButton,
+                { backgroundColor: colors.surface },
+                isTestingNotification && styles.devButtonDisabled,
+              ]}
+              onPress={() => handleTestNotification('reminder')}
+              disabled={isTestingNotification}
+              accessibilityRole="button"
+              accessibilityLabel="Test reminder notification"
+              activeOpacity={0.7}
+            >
+              <Ionicons name="time-outline" size={20} color={colors.primary} />
+              <Text style={[styles.devButtonText, { color: colors.text }]}>
+                Test Reminder Notification
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
       <PrivacyPolicyModal
@@ -218,6 +322,30 @@ const styles = StyleSheet.create({
   },
   settingItemValue: {
     fontSize: 14,
+  },
+  devSubtitle: {
+    fontSize: 14,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  devButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    gap: 12,
+  },
+  devButtonDisabled: {
+    opacity: 0.5,
+  },
+  devButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 
