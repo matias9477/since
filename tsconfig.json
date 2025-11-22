@@ -4,7 +4,16 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/src/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/app/*": ["./src/app/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/theme/*": ["./src/theme/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/config/*": ["./src/config/*"],
+      "@/db/*": ["./src/db/*"],
+      "@/navigation/*": ["./src/navigation/*"]
     },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

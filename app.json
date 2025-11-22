@@ -26,8 +26,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "edgeToEdgeEnabled": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,6 +36,9 @@
         "projectId": "bc18fb25-dfa4-49d9-821b-699264586dc2"
       }
     },
-    "owner": "matias.turra"
+    "owner": "matias.turra",
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
