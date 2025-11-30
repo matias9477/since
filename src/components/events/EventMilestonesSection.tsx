@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { addDays, addWeeks, addMonths, addYears } from "date-fns";
 import { useTheme } from "@/theme/index";
 import { isMilestoneReached } from "@/config/milestones";
 import type { Milestone } from "@/features/milestones/types";
@@ -36,6 +37,49 @@ const convertMilestoneToDays = (
       return targetAmount * 365.25; // Average days per year
     default:
       return targetAmount;
+  }
+};
+
+/**
+ * Calculates the date when a milestone was reached based on the event start date
+ * If milestone.reachedAt exists, returns that. Otherwise calculates it from startDate + target
+ */
+const getMilestoneReachedDate = (
+  milestone: Milestone,
+  eventStartDate: Date
+): Date | null => {
+  // If milestone already has a reachedAt date, use it
+  if (milestone.reachedAt) {
+    return milestone.reachedAt;
+  }
+
+  // Check if milestone has been reached
+  const reached = isMilestoneReached(
+    {
+      label: milestone.label,
+      targetAmount: milestone.targetAmount,
+      targetUnit: milestone.targetUnit,
+      isPredefined: true,
+    },
+    eventStartDate
+  );
+
+  if (!reached) {
+    return null;
+  }
+
+  // Calculate the reached date by adding the target amount/unit to the start date
+  switch (milestone.targetUnit) {
+    case "days":
+      return addDays(eventStartDate, milestone.targetAmount);
+    case "weeks":
+      return addWeeks(eventStartDate, milestone.targetAmount);
+    case "months":
+      return addMonths(eventStartDate, milestone.targetAmount);
+    case "years":
+      return addYears(eventStartDate, milestone.targetAmount);
+    default:
+      return null;
   }
 };
 
@@ -104,6 +148,13 @@ export const EventMilestonesSection: React.FC<EventMilestonesSectionProps> = ({
               },
               event.startDate
             );
+
+          // Calculate or get the reached date
+          const reachedDate = getMilestoneReachedDate(
+            milestone,
+            event.startDate
+          );
+
           return (
             <View
               key={milestone.id}
@@ -137,10 +188,10 @@ export const EventMilestonesSection: React.FC<EventMilestonesSectionProps> = ({
                   ]}
                 >
                   {milestone.targetAmount} {milestone.targetUnit}
-                  {milestone.reachedAt && (
+                  {reachedDate && (
                     <Text style={{ color: colors.primary }}>
                       {" "}
-                      • Reached {milestone.reachedAt.toLocaleDateString()}
+                      • Reached {reachedDate.toLocaleDateString()}
                     </Text>
                   )}
                 </Text>
