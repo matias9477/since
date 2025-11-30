@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "@/theme";
+import { useTheme } from "@/theme/index";
 import { useThemeStore } from "@/store/themeStore";
 import { getAppVersion } from "@/utils/version";
 import { PrivacyPolicyModal } from "@/components/shared/PrivacyPolicyModal";
