@@ -45,7 +45,7 @@ export const getMilestoneById = async (id: string): Promise<Milestone | null> =>
     .where(eq(milestones.id, id))
     .limit(1);
 
-  if (results.length === 0) {
+  if (results.length === 0 || !results[0]) {
     return null;
   }
 

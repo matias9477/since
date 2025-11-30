@@ -44,6 +44,14 @@ export const PickerModal = <T,>({
   showScrollView = true,
 }: PickerModalProps<T>): React.ReactElement => {
   const { colors } = useTheme();
+  
+  // Convert string percentage to number for maxHeight style
+  const maxHeightValue: number | undefined = 
+    typeof maxHeight === 'string' && maxHeight.endsWith('%')
+      ? undefined // Let the ScrollView handle percentage via contentContainerStyle
+      : typeof maxHeight === 'number' 
+        ? maxHeight 
+        : undefined;
 
   const handleSelect = (value: T) => {
     onSelect(value);
@@ -131,7 +139,10 @@ export const PickerModal = <T,>({
             <View
               style={[
                 styles.modalContent,
-                { backgroundColor: colors.surface, maxHeight },
+                { 
+                  backgroundColor: colors.surface, 
+                  ...(maxHeightValue !== undefined && { maxHeight: maxHeightValue }),
+                },
               ]}
               onStartShouldSetResponder={() => true}
             >

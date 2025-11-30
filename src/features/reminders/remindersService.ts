@@ -44,7 +44,7 @@ export const getReminderById = async (id: string): Promise<Reminder | null> => {
     .where(eq(reminders.id, id))
     .limit(1);
 
-  if (results.length === 0) {
+  if (results.length === 0 || !results[0]) {
     return null;
   }
 

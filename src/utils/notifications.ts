@@ -201,7 +201,7 @@ export const scheduleOneTimeNotification = async (
         body,
         data: data || {},
       },
-      trigger: date,
+      trigger: date as unknown as Notifications.NotificationTriggerInput,
     });
 
     return identifier;
@@ -480,7 +480,7 @@ export const scheduleMilestoneNotification = async (
         },
         sound: true,
       },
-      trigger: milestoneDate, // OS-level scheduling - works when app is closed
+      trigger: milestoneDate as unknown as Notifications.NotificationTriggerInput, // OS-level scheduling - works when app is closed
     });
 
     console.log(`[Notifications] Scheduled milestone notification: ${milestoneLabel} for ${milestoneDate.toISOString()}`);

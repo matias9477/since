@@ -97,8 +97,8 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
           onConfirm={handleDateConfirm}
           onCancel={handleDateCancel}
           mode="date"
-          maximumDate={maximumDate}
-          minimumDate={minimumDate}
+          {...(maximumDate && { maximumDate })}
+          {...(minimumDate && { minimumDate })}
         />
       )}
     </View>

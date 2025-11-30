@@ -4,7 +4,6 @@
  */
 
 export { colors } from './colors';
-export type { ColorKey } from './colors';
 export { getThemeColors, useTheme } from './utils';
 export type { ThemeColors } from './utils';
 

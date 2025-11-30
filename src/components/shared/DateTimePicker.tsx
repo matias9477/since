@@ -33,8 +33,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   const locale = mode === "time" ? "en_GB" : "en_US";
 
   // For time mode, completely exclude date constraints to prevent any issues
-  // Explicitly set maximumDate and minimumDate to undefined to ensure no constraints are applied
-  // Some iOS versions of the library may apply constraints even if props are not passed
+  // Don't pass maximumDate or minimumDate props at all for time mode
   if (mode === "time") {
     return (
       <DateTimePickerModal
@@ -44,8 +43,6 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
         onConfirm={onConfirm}
         onCancel={onCancel}
         display={display}
-        maximumDate={undefined}
-        minimumDate={undefined}
         themeVariant={isDarkMode ? "dark" : "light"}
         accentColor={colors.primary}
         isDarkModeEnabled={isDarkMode}

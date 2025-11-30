@@ -47,14 +47,20 @@ export const getEventById = async (id: string): Promise<Event | null> => {
   
   const result = await db.select().from(events).where(eq(events.id, id)).limit(1);
   
-  if (result.length === 0) {
+  if (result.length === 0 || !result[0]) {
     return null;
   }
   
   const row = result[0];
   return {
-    ...row,
+    id: row.id,
+    title: row.title,
+    description: row.description,
     startDate: new Date(row.startDate),
+    showTimeAs: row.showTimeAs,
+    color: row.color,
+    icon: row.icon,
+    isPinned: row.isPinned,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
   };

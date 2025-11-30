@@ -171,8 +171,8 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
             onConfirm={handleDateConfirm}
             onCancel={handleDateCancel}
             mode="date"
-            maximumDate={maximumDate}
-            minimumDate={minimumDate}
+            {...(maximumDate && { maximumDate })}
+            {...(minimumDate && { minimumDate })}
           />
           <DateTimePicker
             isVisible={showTimePicker}
