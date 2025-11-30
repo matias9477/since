@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
+  differenceInDays,
   differenceInHours,
   differenceInMinutes,
   differenceInSeconds,
@@ -15,19 +16,6 @@ import type { TimeUnit } from "@/config/types";
  * These are not stored in the backend but can be displayed in the details screen
  */
 type ExtendedTimeUnit = TimeUnit | "hours" | "minutes" | "seconds";
-
-/**
- * All available time units in order from largest to smallest
- */
-const ALL_TIME_UNITS: ExtendedTimeUnit[] = [
-  "years",
-  "months",
-  "weeks",
-  "days",
-  "hours",
-  "minutes",
-  "seconds",
-];
 
 /**
  * Formats a number with commas for better readability
@@ -104,13 +92,31 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
   }, [showTimeAs, previewUnit]);
 
   /**
-   * Gets the allowed time units for cycling based on the event's original unit
-   * Only allows cycling to smaller or equal units (including hours, minutes, seconds)
+   * Gets the allowed time units for cycling
+   * Always includes: days, hours, minutes, seconds
+   * Conditionally includes: months (if >= 30 days), years (if >= 365 days)
+   * Order: years -> months -> days -> hours -> minutes -> seconds (if available)
    */
   const getAllowedUnits = (): ExtendedTimeUnit[] => {
-    const originalIndex = ALL_TIME_UNITS.indexOf(showTimeAs);
-    // Return all units from the original unit down to seconds (inclusive)
-    return ALL_TIME_UNITS.slice(originalIndex);
+    const now = new Date();
+    const totalDays = differenceInDays(now, startDate);
+
+    const units: ExtendedTimeUnit[] = [];
+
+    // Add years if >= 365 days
+    if (totalDays >= 365) {
+      units.push("years");
+    }
+
+    // Add months if >= 30 days
+    if (totalDays >= 30) {
+      units.push("months");
+    }
+
+    // Always add days, hours, minutes, seconds
+    units.push("days", "hours", "minutes", "seconds");
+
+    return units;
   };
 
   /**

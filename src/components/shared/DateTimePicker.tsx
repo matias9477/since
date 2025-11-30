@@ -33,24 +33,38 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   const locale = mode === "time" ? "en_GB" : "en_US";
 
   // Don't apply date constraints to time picker
-  const shouldApplyDateConstraints = mode !== "time";
+  // For time mode, explicitly exclude maximumDate and minimumDate to prevent any constraint issues
+  const pickerProps =
+    mode === "time"
+      ? {
+          isVisible,
+          mode,
+          date,
+          onConfirm,
+          onCancel,
+          display,
+          themeVariant: isDarkMode ? "dark" : "light",
+          accentColor: colors.primary,
+          isDarkModeEnabled: isDarkMode,
+          buttonTextColorIOS: isDarkMode ? "#FFFFFF" : "#000000",
+          locale,
+        }
+      : {
+          isVisible,
+          mode,
+          date,
+          onConfirm,
+          onCancel,
+          ...(maximumDate && { maximumDate }),
+          ...(minimumDate && { minimumDate }),
+          display,
+          themeVariant: isDarkMode ? "dark" : "light",
+          accentColor: colors.primary,
+          isDarkModeEnabled: isDarkMode,
+          buttonTextColorIOS: isDarkMode ? "#FFFFFF" : "#000000",
+          locale,
+        };
 
-  return (
-    <DateTimePickerModal
-      isVisible={isVisible}
-      mode={mode}
-      date={date}
-      onConfirm={onConfirm}
-      onCancel={onCancel}
-      {...(shouldApplyDateConstraints && maximumDate && { maximumDate })}
-      {...(shouldApplyDateConstraints && minimumDate && { minimumDate })}
-      display={display}
-      themeVariant={isDarkMode ? "dark" : "light"}
-      accentColor={colors.primary}
-      isDarkModeEnabled={isDarkMode}
-      buttonTextColorIOS={isDarkMode ? "#FFFFFF" : "#000000"}
-      locale={locale}
-    />
-  );
+  return <DateTimePickerModal {...pickerProps} />;
 };
 

@@ -30,20 +30,22 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  // Create a date object for time picker using a fixed date (Jan 1, 2000)
-  // This ensures no date constraints affect the time selection
-  // We only care about the time portion, so the date doesn't matter
+  /**
+   * Creates a date object for time picker using a fixed date (Jan 1, 2000)
+   * This ensures no date constraints affect the time selection
+   * We only care about the time portion, so the date doesn't matter
+   * Using a date far in the past ensures it's never constrained by maximumDate/minimumDate
+   */
   const getTimePickerDate = () => {
     const timeDate = new Date(date);
-    // Use a fixed date in the past to avoid any constraints
-    return new Date(
-      2000,
-      0,
-      1,
-      timeDate.getHours(),
-      timeDate.getMinutes(),
-      timeDate.getSeconds()
-    );
+    // Use a fixed date in the past (year 2000) to avoid any constraints
+    // This date is guaranteed to be before any reasonable minimumDate
+    const neutralDate = new Date(2000, 0, 1);
+    neutralDate.setHours(timeDate.getHours());
+    neutralDate.setMinutes(timeDate.getMinutes());
+    neutralDate.setSeconds(timeDate.getSeconds());
+    neutralDate.setMilliseconds(0);
+    return neutralDate;
   };
 
   const handleDateConfirm = (selectedDate: Date) => {
