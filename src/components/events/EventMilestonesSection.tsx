@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/index";
 import { isMilestoneReached } from "@/config/milestones";
 import type { Milestone } from "@/features/milestones/types";
 import type { Event } from "@/features/events/types";
+import type { TimeUnit } from "@/config/types";
 
 interface EventMilestonesSectionProps {
   /**
@@ -18,8 +19,30 @@ interface EventMilestonesSectionProps {
 }
 
 /**
+ * Converts a milestone's target amount and unit to days for sorting purposes
+ */
+const convertMilestoneToDays = (
+  targetAmount: number,
+  targetUnit: TimeUnit
+): number => {
+  switch (targetUnit) {
+    case "days":
+      return targetAmount;
+    case "weeks":
+      return targetAmount * 7;
+    case "months":
+      return targetAmount * 30.44; // Average days per month
+    case "years":
+      return targetAmount * 365.25; // Average days per year
+    default:
+      return targetAmount;
+  }
+};
+
+/**
  * Component displaying the milestones section for an event
  * Shows a list of milestones with reached status and a "show more" button if there are more than 5
+ * Milestones are sorted by their actual time value (converted to days)
  */
 export const EventMilestonesSection: React.FC<EventMilestonesSectionProps> = ({
   milestones,
@@ -27,6 +50,18 @@ export const EventMilestonesSection: React.FC<EventMilestonesSectionProps> = ({
 }) => {
   const { colors } = useTheme();
   const [showAllMilestones, setShowAllMilestones] = useState(false);
+
+  /**
+   * Sort milestones by their actual time value (converted to days)
+   * This ensures milestones are displayed in chronological order regardless of their unit
+   */
+  const sortedMilestones = useMemo(() => {
+    return [...milestones].sort((a, b) => {
+      const daysA = convertMilestoneToDays(a.targetAmount, a.targetUnit);
+      const daysB = convertMilestoneToDays(b.targetAmount, b.targetUnit);
+      return daysA - daysB;
+    });
+  }, [milestones]);
 
   if (milestones.length === 0) {
     return (
@@ -45,8 +80,8 @@ export const EventMilestonesSection: React.FC<EventMilestonesSectionProps> = ({
   }
 
   const displayedMilestones = showAllMilestones
-    ? milestones
-    : milestones.slice(0, 5);
+    ? sortedMilestones
+    : sortedMilestones.slice(0, 5);
 
   return (
     <View style={[styles.section, { backgroundColor: colors.surface }]}>
@@ -84,9 +119,7 @@ export const EventMilestonesSection: React.FC<EventMilestonesSectionProps> = ({
             >
               <View style={styles.milestoneContent}>
                 <View style={styles.milestoneHeader}>
-                  <Text
-                    style={[styles.milestoneLabel, { color: colors.text }]}
-                  >
+                  <Text style={[styles.milestoneLabel, { color: colors.text }]}>
                     {milestone.label}
                   </Text>
                   {reached && (
@@ -98,7 +131,10 @@ export const EventMilestonesSection: React.FC<EventMilestonesSectionProps> = ({
                   )}
                 </View>
                 <Text
-                  style={[styles.milestoneTarget, { color: colors.textSecondary }]}
+                  style={[
+                    styles.milestoneTarget,
+                    { color: colors.textSecondary },
+                  ]}
                 >
                   {milestone.targetAmount} {milestone.targetUnit}
                   {milestone.reachedAt && (
@@ -119,9 +155,7 @@ export const EventMilestonesSection: React.FC<EventMilestonesSectionProps> = ({
           style={styles.showMoreButton}
           accessibilityRole="button"
           accessibilityLabel={
-            showAllMilestones
-              ? "Show fewer milestones"
-              : "Show all milestones"
+            showAllMilestones ? "Show fewer milestones" : "Show all milestones"
           }
         >
           <Text style={[styles.showMoreText, { color: colors.primary }]}>
@@ -201,4 +235,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-
