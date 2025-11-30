@@ -15,7 +15,7 @@ import type { CompositeNavigationProp } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEventsStore } from "@/features/events/eventsStore";
-import { EventCard } from "@/components/EventCard";
+import { EventCard } from "@/components/events/EventCard";
 import { useTheme } from "@/theme/index";
 import type { Event } from "@/features/events/types";
 import type { RootStackParamList, TabParamList } from "@/navigation/types";

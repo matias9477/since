@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useThemeStore } from '@/store/themeStore';
 import { getAppVersion } from '@/utils/version';
-import { PrivacyPolicyModal } from '@/components/PrivacyPolicyModal';
-import { TermsOfServiceModal } from '@/components/TermsOfServiceModal';
+import { PrivacyPolicyModal } from '@/components/shared/PrivacyPolicyModal';
+import { TermsOfServiceModal } from '@/components/shared/TermsOfServiceModal';
 import {
   sendTestNotification,
   sendTestMilestoneNotification,

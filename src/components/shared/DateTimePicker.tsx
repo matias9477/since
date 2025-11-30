@@ -1,6 +1,6 @@
 import React from "react";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { useTheme } from "../theme";
+import { useTheme } from "@/theme";
 
 interface DateTimePickerProps {
   isVisible: boolean;
@@ -53,3 +53,4 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
     />
   );
 };
+
