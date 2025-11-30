@@ -30,6 +30,14 @@ const ALL_TIME_UNITS: ExtendedTimeUnit[] = [
 ];
 
 /**
+ * Formats a number with commas for better readability
+ * Example: 1000000 -> "1,000,000"
+ */
+const formatNumber = (num: number): string => {
+  return num.toLocaleString("en-US");
+};
+
+/**
  * Formats time for extended units (including hours, minutes, seconds)
  * For hours, minutes, and seconds, shows only the total count (no compound units)
  * Falls back to formatTimeSince for standard units
@@ -44,19 +52,19 @@ const formatExtendedTimeSince = (
     case "hours": {
       const totalHours = differenceInHours(now, startDate);
       const unitLabel = totalHours === 1 ? "hour" : "hours";
-      return `${totalHours} ${unitLabel}`;
+      return `${formatNumber(totalHours)} ${unitLabel}`;
     }
 
     case "minutes": {
       const totalMinutes = differenceInMinutes(now, startDate);
       const unitLabel = totalMinutes === 1 ? "minute" : "minutes";
-      return `${totalMinutes} ${unitLabel}`;
+      return `${formatNumber(totalMinutes)} ${unitLabel}`;
     }
 
     case "seconds": {
       const totalSeconds = differenceInSeconds(now, startDate);
       const unitLabel = totalSeconds === 1 ? "second" : "seconds";
-      return `${totalSeconds} ${unitLabel}`;
+      return `${formatNumber(totalSeconds)} ${unitLabel}`;
     }
 
     default:
@@ -85,9 +93,7 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
   showTimeAs,
 }) => {
   const { colors } = useTheme();
-  const [previewUnit, setPreviewUnit] = useState<ExtendedTimeUnit | null>(
-    null
-  );
+  const [previewUnit, setPreviewUnit] = useState<ExtendedTimeUnit | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Initialize preview unit with event's actual unit when component mounts
@@ -115,7 +121,10 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
     const currentUnit = previewUnit || showTimeAs;
     const currentIndex = allowedUnits.indexOf(currentUnit);
     const nextIndex = (currentIndex + 1) % allowedUnits.length;
-    setPreviewUnit(allowedUnits[nextIndex]);
+    const nextUnit = allowedUnits[nextIndex];
+    if (nextUnit) {
+      setPreviewUnit(nextUnit);
+    }
   };
 
   /**
@@ -127,7 +136,10 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
     const currentIndex = allowedUnits.indexOf(currentUnit);
     const prevIndex =
       (currentIndex - 1 + allowedUnits.length) % allowedUnits.length;
-    setPreviewUnit(allowedUnits[prevIndex]);
+    const prevUnit = allowedUnits[prevIndex];
+    if (prevUnit) {
+      setPreviewUnit(prevUnit);
+    }
   };
 
   // Refresh time display periodically
@@ -237,4 +249,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-

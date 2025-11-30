@@ -38,9 +38,6 @@ export const EventDetailsSection: React.FC<EventDetailsSectionProps> = ({
         label="Started"
         editable={false}
       />
-      <Text style={[styles.metaText, { color: colors.textTertiary }]}>
-        Displaying as: {event.showTimeAs}
-      </Text>
     </View>
   );
 };
@@ -71,4 +68,3 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
-
