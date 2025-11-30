@@ -1,17 +1,24 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/theme';
-import { useThemeStore } from '@/store/themeStore';
-import { getAppVersion } from '@/utils/version';
-import { PrivacyPolicyModal } from '@/components/shared/PrivacyPolicyModal';
-import { TermsOfServiceModal } from '@/components/shared/TermsOfServiceModal';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@/theme";
+import { useThemeStore } from "@/store/themeStore";
+import { getAppVersion } from "@/utils/version";
+import { PrivacyPolicyModal } from "@/components/shared/PrivacyPolicyModal";
+import { TermsOfServiceModal } from "@/components/shared/TermsOfServiceModal";
 import {
   sendTestNotification,
   sendTestMilestoneNotification,
   sendTestReminderNotification,
-} from '@/utils/notifications';
+} from "@/utils/notifications";
 
 /**
  * Settings screen for app configuration
@@ -28,11 +35,11 @@ export const SettingsScreen: React.FC = () => {
    */
   const handleToggleDarkMode = () => {
     const nextMode =
-      themeMode === 'system'
-        ? 'light'
-        : themeMode === 'light'
-          ? 'dark'
-          : 'system';
+      themeMode === "system"
+        ? "light"
+        : themeMode === "light"
+          ? "dark"
+          : "system";
     setThemeMode(nextMode);
   };
 
@@ -40,48 +47,58 @@ export const SettingsScreen: React.FC = () => {
    * Gets the display text for the current theme mode
    */
   const getThemeModeText = () => {
-    if (themeMode === 'system') {
-      return 'Follow system setting';
+    if (themeMode === "system") {
+      return "Follow system setting";
     }
-    if (themeMode === 'light') {
-      return 'Light mode';
+    if (themeMode === "light") {
+      return "Light mode";
     }
-    return 'Dark mode';
+    return "Dark mode";
   };
 
   /**
    * Handles test notification button press
    */
-  const handleTestNotification = async (type: 'basic' | 'milestone' | 'reminder') => {
+  const handleTestNotification = async (
+    type: "basic" | "milestone" | "reminder"
+  ) => {
     if (isTestingNotification) return;
 
     setIsTestingNotification(true);
     try {
-      let identifier = '';
+      let identifier = "";
       switch (type) {
-        case 'basic':
+        case "basic":
           identifier = await sendTestNotification();
           break;
-        case 'milestone':
-          identifier = await sendTestMilestoneNotification('Test Event');
+        case "milestone":
+          identifier = await sendTestMilestoneNotification("Test Event");
           break;
-        case 'reminder':
-          identifier = await sendTestReminderNotification('Test Event', 'one-time');
+        case "reminder":
+          identifier = await sendTestReminderNotification(
+            "Test Event",
+            "one-time"
+          );
           break;
       }
 
       if (identifier) {
-        Alert.alert('Success', 'Test notification sent! Check your notifications.');
+        Alert.alert(
+          "Success",
+          "Test notification sent! Check your notifications."
+        );
       } else {
         Alert.alert(
-          'Error',
-          'Failed to send test notification. Make sure notifications are enabled in your device settings.'
+          "Error",
+          "Failed to send test notification. Make sure notifications are enabled in your device settings."
         );
       }
     } catch (error) {
       Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to send test notification'
+        "Error",
+        error instanceof Error
+          ? error.message
+          : "Failed to send test notification"
       );
     } finally {
       setIsTestingNotification(false);
@@ -106,13 +123,19 @@ export const SettingsScreen: React.FC = () => {
             <Text style={[styles.settingItemLabel, { color: colors.text }]}>
               {label}
             </Text>
-            <Text style={[styles.settingItemValue, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.settingItemValue, { color: colors.textSecondary }]}
+            >
               {value}
             </Text>
           </View>
         </View>
         {onPress && (
-          <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={colors.textTertiary}
+          />
         )}
       </>
     );
@@ -142,7 +165,10 @@ export const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={["top"]}
+    >
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
           <View style={styles.header}>
@@ -156,9 +182,9 @@ export const SettingsScreen: React.FC = () => {
               Appearance
             </Text>
             {renderSettingItem(
-              'Theme',
+              "Theme",
               getThemeModeText(),
-              'moon-outline',
+              "moon-outline",
               handleToggleDarkMode
             )}
           </View>
@@ -167,15 +193,15 @@ export const SettingsScreen: React.FC = () => {
               Legal
             </Text>
             {renderSettingItem(
-              'Privacy Policy',
-              'Read our privacy policy',
-              'shield-outline',
+              "Privacy Policy",
+              "Read our privacy policy",
+              "shield-outline",
               () => setShowPrivacyPolicy(true)
             )}
             {renderSettingItem(
-              'Terms of Service',
-              'Read our terms of service',
-              'document-text-outline',
+              "Terms of Service",
+              "Read our terms of service",
+              "document-text-outline",
               () => setShowTermsOfService(true)
             )}
           </View>
@@ -184,12 +210,12 @@ export const SettingsScreen: React.FC = () => {
               About
             </Text>
             {renderSettingItem(
-              'Version',
+              "Version",
               getAppVersion(),
-              'information-circle-outline'
+              "information-circle-outline"
             )}
           </View>
-          <View style={styles.section}>
+          {/* <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Developer
             </Text>
@@ -247,7 +273,7 @@ export const SettingsScreen: React.FC = () => {
                 Test Reminder Notification
               </Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
         </View>
       </ScrollView>
       <PrivacyPolicyModal
@@ -278,7 +304,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 8,
   },
   subtitle: {
@@ -290,14 +316,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 12,
     paddingHorizontal: 4,
   },
   settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 16,
     borderRadius: 8,
     marginBottom: 8,
@@ -307,8 +333,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   settingItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   settingItemText: {
@@ -317,7 +343,7 @@ const styles = StyleSheet.create({
   },
   settingItemLabel: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 2,
   },
   settingItemValue: {
@@ -329,8 +355,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   devButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderRadius: 8,
     marginBottom: 8,
@@ -345,7 +371,6 @@ const styles = StyleSheet.create({
   },
   devButtonText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });
-
