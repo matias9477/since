@@ -32,39 +32,46 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   // Use en_GB locale for time mode to enable 24-hour format
   const locale = mode === "time" ? "en_GB" : "en_US";
 
-  // Don't apply date constraints to time picker
-  // For time mode, explicitly exclude maximumDate and minimumDate to prevent any constraint issues
-  const pickerProps =
-    mode === "time"
-      ? {
-          isVisible,
-          mode,
-          date,
-          onConfirm,
-          onCancel,
-          display,
-          themeVariant: isDarkMode ? "dark" : "light",
-          accentColor: colors.primary,
-          isDarkModeEnabled: isDarkMode,
-          buttonTextColorIOS: isDarkMode ? "#FFFFFF" : "#000000",
-          locale,
-        }
-      : {
-          isVisible,
-          mode,
-          date,
-          onConfirm,
-          onCancel,
-          ...(maximumDate && { maximumDate }),
-          ...(minimumDate && { minimumDate }),
-          display,
-          themeVariant: isDarkMode ? "dark" : "light",
-          accentColor: colors.primary,
-          isDarkModeEnabled: isDarkMode,
-          buttonTextColorIOS: isDarkMode ? "#FFFFFF" : "#000000",
-          locale,
-        };
+  // For time mode, completely exclude date constraints to prevent any issues
+  // Explicitly set maximumDate and minimumDate to undefined to ensure no constraints are applied
+  // Some iOS versions of the library may apply constraints even if props are not passed
+  if (mode === "time") {
+    return (
+      <DateTimePickerModal
+        isVisible={isVisible}
+        mode="time"
+        date={date}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+        display={display}
+        maximumDate={undefined}
+        minimumDate={undefined}
+        themeVariant={isDarkMode ? "dark" : "light"}
+        accentColor={colors.primary}
+        isDarkModeEnabled={isDarkMode}
+        buttonTextColorIOS={isDarkMode ? "#FFFFFF" : "#000000"}
+        locale={locale}
+      />
+    );
+  }
 
-  return <DateTimePickerModal {...pickerProps} />;
+  // For date/datetime modes, apply constraints as needed
+  return (
+    <DateTimePickerModal
+      isVisible={isVisible}
+      mode={mode}
+      date={date}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+      {...(maximumDate && { maximumDate })}
+      {...(minimumDate && { minimumDate })}
+      display={display}
+      themeVariant={isDarkMode ? "dark" : "light"}
+      accentColor={colors.primary}
+      isDarkModeEnabled={isDarkMode}
+      buttonTextColorIOS={isDarkMode ? "#FFFFFF" : "#000000"}
+      locale={locale}
+    />
+  );
 };
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { DateTimeSelector } from "@/components/shared/DateTimeSelector";
+import { DateSelector } from "@/components/shared/DateSelector";
 import { useTheme } from "@/theme/index";
 import type { Event } from "@/features/events/types";
 
@@ -32,7 +32,7 @@ export const EventDetailsSection: React.FC<EventDetailsSectionProps> = ({
           {event.description}
         </Text>
       )}
-      <DateTimeSelector
+      <DateSelector
         date={event.startDate}
         onDateChange={() => {}} // Read-only, no-op
         label="Started"
@@ -46,7 +46,9 @@ const styles = StyleSheet.create({
   section: {
     borderRadius: 8,
     padding: 16,
+    paddingBottom: 0,
     marginBottom: 16,
+    gap: 6,
   },
   sectionTitle: {
     fontSize: 14,

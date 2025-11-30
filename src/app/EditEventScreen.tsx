@@ -19,7 +19,7 @@ import { useRemindersStore } from "@/features/reminders/remindersStore";
 import { RECURRENCE_FREQUENCIES, REMINDER_TYPES } from "@/config/constants";
 import { EVENT_ICONS, type EventIconName } from "@/config/eventIcons";
 import { PickerModal } from "@/components/shared/PickerModal";
-import { DateTimeSelector } from "@/components/shared/DateTimeSelector";
+import { DateSelector } from "@/components/shared/DateSelector";
 import { useTheme } from "../theme";
 import type { ReminderType, RecurrenceFrequency } from "@/config/types";
 import type { CreateEventInput } from "@/features/events/types";
@@ -53,9 +53,19 @@ export const EditEventScreen: React.FC = () => {
   } = useRemindersStore();
   const { colors } = useTheme();
 
+  /**
+   * Normalizes a date to midnight (00:00:00) to remove time component
+   */
+  const normalizeToMidnight = (date: Date): Date => {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+  };
+
+  // Initialize startDate with today's date normalized to midnight
+  const [startDate, setStartDate] = useState(() => normalizeToMidnight(new Date()));
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [startDate, setStartDate] = useState(new Date());
   const [icon, setIcon] = useState<EventIconName | null>(null);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
@@ -77,7 +87,8 @@ export const EditEventScreen: React.FC = () => {
     if (event) {
       setTitle(event.title);
       setDescription(event.description || "");
-      setStartDate(event.startDate);
+      // Normalize date to midnight when loading existing event
+      setStartDate(normalizeToMidnight(event.startDate));
       setIcon(event.icon as EventIconName | null);
     }
   }, [event]);
@@ -110,10 +121,15 @@ export const EditEventScreen: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // Normalize date to midnight to remove time component
+      const normalizedDate = normalizeToMidnight(
+        startDate instanceof Date ? startDate : new Date(startDate)
+      );
+
       const input: CreateEventInput = {
         title: title.trim(),
         ...(description.trim() && { description: description.trim() }),
-        startDate: startDate instanceof Date ? startDate : new Date(startDate),
+        startDate: normalizedDate,
         showTimeAs: "days",
         ...(icon && { icon }),
       };
@@ -308,7 +324,7 @@ export const EditEventScreen: React.FC = () => {
             />
           </View>
 
-          <DateTimeSelector
+          <DateSelector
             date={startDate}
             onDateChange={setStartDate}
             label="Start Date"

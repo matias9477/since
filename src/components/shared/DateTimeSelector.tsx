@@ -35,16 +35,26 @@ export const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({
    * This ensures no date constraints affect the time selection
    * We only care about the time portion, so the date doesn't matter
    * Using a date far in the past ensures it's never constrained by maximumDate/minimumDate
+   * Creating a completely new date object to avoid any reference issues
    */
   const getTimePickerDate = () => {
     const timeDate = new Date(date);
-    // Use a fixed date in the past (year 2000) to avoid any constraints
+    const currentHours = timeDate.getHours();
+    const currentMinutes = timeDate.getMinutes();
+    const currentSeconds = timeDate.getSeconds();
+    
+    // Use a fixed date in the past (year 2000, Jan 1) to avoid any constraints
     // This date is guaranteed to be before any reasonable minimumDate
-    const neutralDate = new Date(2000, 0, 1);
-    neutralDate.setHours(timeDate.getHours());
-    neutralDate.setMinutes(timeDate.getMinutes());
-    neutralDate.setSeconds(timeDate.getSeconds());
-    neutralDate.setMilliseconds(0);
+    // Create a completely new date object with just the time components
+    // Using a date constructor ensures a clean, independent date object
+    const neutralDate = new Date(2000, 0, 1, currentHours, currentMinutes, currentSeconds, 0);
+    
+    // Verify the date is valid and reset if needed
+    if (isNaN(neutralDate.getTime())) {
+      // Fallback: use current time on a neutral date
+      return new Date(2000, 0, 1, 12, 0, 0, 0);
+    }
+    
     return neutralDate;
   };
 
