@@ -16,21 +16,12 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { DateTimePicker } from "@/components/DateTimePicker";
 import { useEventsStore } from "@/features/events/eventsStore";
 import { useRemindersStore } from "@/features/reminders/remindersStore";
-import {
-  TIME_UNITS,
-  DEFAULT_TIME_UNIT,
-  RECURRENCE_FREQUENCIES,
-  REMINDER_TYPES,
-} from "@/config/constants";
+import { RECURRENCE_FREQUENCIES, REMINDER_TYPES } from "@/config/constants";
 import { EVENT_ICONS, type EventIconName } from "@/config/eventIcons";
 import { PickerModal } from "@/components/PickerModal";
 import { DateTimeSelector } from "@/components/DateTimeSelector";
 import { useTheme } from "../theme";
-import type {
-  TimeUnit,
-  ReminderType,
-  RecurrenceFrequency,
-} from "@/config/types";
+import type { ReminderType, RecurrenceFrequency } from "@/config/types";
 import type { CreateEventInput } from "@/features/events/types";
 import type {
   CreateReminderInput,
@@ -65,9 +56,7 @@ export const EditEventScreen: React.FC = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState(new Date());
-  const [showTimeAs, setShowTimeAs] = useState<TimeUnit>(DEFAULT_TIME_UNIT);
   const [icon, setIcon] = useState<EventIconName | null>(null);
-  const [showTimeUnitPicker, setShowTimeUnitPicker] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [editingReminderId, setEditingReminderId] = useState<string | null>(
@@ -89,7 +78,6 @@ export const EditEventScreen: React.FC = () => {
       setTitle(event.title);
       setDescription(event.description || "");
       setStartDate(event.startDate);
-      setShowTimeAs(event.showTimeAs);
       setIcon(event.icon as EventIconName | null);
     }
   }, [event]);
@@ -126,7 +114,7 @@ export const EditEventScreen: React.FC = () => {
         title: title.trim(),
         ...(description.trim() && { description: description.trim() }),
         startDate: startDate instanceof Date ? startDate : new Date(startDate),
-        showTimeAs,
+        showTimeAs: "days",
         ...(icon && { icon }),
       };
 
@@ -413,47 +401,6 @@ export const EditEventScreen: React.FC = () => {
               onSelect={setIcon}
               onClose={() => setShowIconPicker(false)}
               maxHeight="80%"
-            />
-          </View>
-
-          <View style={styles.field}>
-            {/* TODO: Replace hardcoded label with i18n translations */}
-            <Text style={[styles.label, { color: colors.text }]}>
-              Show Time As
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.selectButton,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-              onPress={() => setShowTimeUnitPicker(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Select time unit"
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.selectButtonText, { color: colors.text }]}>
-                {showTimeAs.charAt(0).toUpperCase() + showTimeAs.slice(1)}
-              </Text>
-              <Ionicons
-                name="chevron-down"
-                size={20}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-
-            {/* Time Unit Picker Modal */}
-            <PickerModal<TimeUnit>
-              visible={showTimeUnitPicker}
-              title="Select Time Unit"
-              options={TIME_UNITS.map((unit) => ({
-                value: unit,
-                label: unit.charAt(0).toUpperCase() + unit.slice(1),
-              }))}
-              selectedValue={showTimeAs}
-              onSelect={setShowTimeAs}
-              onClose={() => setShowTimeUnitPicker(false)}
-              maxHeight="50%"
-              showScrollView={false}
             />
           </View>
 
