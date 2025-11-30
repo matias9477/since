@@ -18,7 +18,11 @@ import { DateTimeSelector } from "@/components/DateTimeSelector";
 import { useTheme } from "@/theme/index";
 import type { TimeUnit } from "@/config/types";
 import type { RootStackParamList } from "@/navigation/types";
-import { differenceInHours, differenceInMinutes, differenceInSeconds } from "date-fns";
+import {
+  differenceInHours,
+  differenceInMinutes,
+  differenceInSeconds,
+} from "date-fns";
 import { formatTimeSince } from "@/lib/formatTimeSince";
 
 /**
@@ -30,14 +34,25 @@ type ExtendedTimeUnit = TimeUnit | "hours" | "minutes" | "seconds";
 /**
  * All available time units in order from largest to smallest
  */
-const ALL_TIME_UNITS: ExtendedTimeUnit[] = ["years", "months", "weeks", "days", "hours", "minutes", "seconds"];
+const ALL_TIME_UNITS: ExtendedTimeUnit[] = [
+  "years",
+  "months",
+  "weeks",
+  "days",
+  "hours",
+  "minutes",
+  "seconds",
+];
 
 /**
  * Formats time for extended units (including hours, minutes, seconds)
  * For hours, minutes, and seconds, shows only the total count (no compound units)
  * Falls back to formatTimeSince for standard units
  */
-const formatExtendedTimeSince = (startDate: Date, unit: ExtendedTimeUnit): string => {
+const formatExtendedTimeSince = (
+  startDate: Date,
+  unit: ExtendedTimeUnit
+): string => {
   const now = new Date();
 
   switch (unit) {
@@ -79,10 +94,8 @@ export const EventDetailScreen: React.FC = () => {
   const route = useRoute<EventDetailScreenRouteProp>();
   const { eventId } = route.params;
   const { getEventById, loadEvents } = useEventsStore();
-  const { loadMilestones, getMilestonesByEventId } =
-    useMilestonesStore();
-  const { loadReminders, getRemindersByEventId } =
-    useRemindersStore();
+  const { loadMilestones, getMilestonesByEventId } = useMilestonesStore();
+  const { loadReminders, getRemindersByEventId } = useRemindersStore();
   const { colors } = useTheme();
   const [refreshKey, setRefreshKey] = useState(0);
   const [previewUnit, setPreviewUnit] = useState<ExtendedTimeUnit | null>(null);
@@ -157,12 +170,12 @@ export const EventDetailScreen: React.FC = () => {
     const currentUnit = previewUnit || event?.showTimeAs;
     const isSeconds = currentUnit === "seconds";
     const isMinutes = currentUnit === "minutes";
-    
-    const interval = isSeconds 
+
+    const interval = isSeconds
       ? 1000 // 1 second for seconds
-      : isMinutes 
-      ? 60000 // 1 minute for minutes
-      : 60000; // 1 minute for other units
+      : isMinutes
+        ? 60000 // 1 minute for minutes
+        : 60000; // 1 minute for other units
 
     const timer = setInterval(() => {
       setRefreshKey((prev) => prev + 1);
@@ -470,16 +483,17 @@ export const EventDetailScreen: React.FC = () => {
                     style={styles.showMoreButton}
                     accessibilityRole="button"
                     accessibilityLabel={
-                      showAllMilestones ? "Show fewer milestones" : "Show all milestones"
+                      showAllMilestones
+                        ? "Show fewer milestones"
+                        : "Show all milestones"
                     }
                   >
                     <Text
-                      style={[
-                        styles.showMoreText,
-                        { color: colors.primary },
-                      ]}
+                      style={[styles.showMoreText, { color: colors.primary }]}
                     >
-                      {showAllMilestones ? "Show Less" : `Show All (${eventMilestones.length})`}
+                      {showAllMilestones
+                        ? "Show Less"
+                        : `Show All (${eventMilestones.length})`}
                     </Text>
                     <Ionicons
                       name={showAllMilestones ? "chevron-up" : "chevron-down"}
@@ -665,5 +679,6 @@ const styles = StyleSheet.create({
   },
   headerButtonText: {
     fontSize: 16,
+    paddingRight: 12,
   },
 });
