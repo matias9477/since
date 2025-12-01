@@ -94,6 +94,8 @@ export const createReminder = async (input: CreateReminderInput): Promise<Remind
         id,
         input.eventId,
         event.title,
+        event.startDate,
+        event.showTimeAs,
         input.type,
         input.scheduledAt || null,
         input.recurrenceRule || null
@@ -160,6 +162,8 @@ export const updateReminder = async (
           id,
           updatedReminder.eventId,
           event.title,
+          event.startDate,
+          event.showTimeAs,
           updatedReminder.type,
           updatedReminder.scheduledAt,
           updatedReminder.recurrenceRule

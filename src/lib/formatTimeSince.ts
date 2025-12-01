@@ -10,17 +10,17 @@ const formatNumber = (num: number): string => {
 };
 
 /**
- * Formats the time elapsed since a given start date in the specified unit
+ * Formats the time elapsed between two dates in the specified unit
  * Uses compound units (e.g., "1 week and 1 day" instead of "1.1 weeks")
  * Numbers are formatted with commas for better readability
  *
  * @param startDate - The start date to calculate time from
+ * @param endDate - The end date to calculate time to (defaults to now)
  * @param unit - The unit to display (days, weeks, months, years)
  * @returns A formatted string representing the time elapsed (e.g., "123 days", "1 week and 1 day")
  */
-export const formatTimeSince = (startDate: Date, unit: TimeUnit): string => {
-  const now = new Date();
-  const totalDays = differenceInDays(now, startDate);
+export const formatTimeBetween = (startDate: Date, endDate: Date, unit: TimeUnit): string => {
+  const totalDays = differenceInDays(endDate, startDate);
 
   switch (unit) {
     case 'days': {
@@ -48,12 +48,12 @@ export const formatTimeSince = (startDate: Date, unit: TimeUnit): string => {
     }
 
     case 'months': {
-      const totalMonths = differenceInMonths(now, startDate);
+      const totalMonths = differenceInMonths(endDate, startDate);
       
       // Calculate remaining days after full months
       const monthsStartDate = new Date(startDate);
       monthsStartDate.setMonth(monthsStartDate.getMonth() + totalMonths);
-      const remainingDays = differenceInDays(now, monthsStartDate);
+      const remainingDays = differenceInDays(endDate, monthsStartDate);
 
       // TODO: Replace hardcoded unit labels with i18n translations
       if (totalMonths === 0) {
@@ -74,8 +74,8 @@ export const formatTimeSince = (startDate: Date, unit: TimeUnit): string => {
     }
 
     case 'years': {
-      const years = differenceInYears(now, startDate);
-      const totalMonths = differenceInMonths(now, startDate);
+      const years = differenceInYears(endDate, startDate);
+      const totalMonths = differenceInMonths(endDate, startDate);
       const remainingMonths = totalMonths % 12;
       
       // TODO: Replace hardcoded unit labels with i18n translations
@@ -96,5 +96,18 @@ export const formatTimeSince = (startDate: Date, unit: TimeUnit): string => {
       return `${formatNumber(totalDays)} ${unitLabel}`;
     }
   }
+};
+
+/**
+ * Formats the time elapsed since a given start date in the specified unit
+ * Uses compound units (e.g., "1 week and 1 day" instead of "1.1 weeks")
+ * Numbers are formatted with commas for better readability
+ *
+ * @param startDate - The start date to calculate time from
+ * @param unit - The unit to display (days, weeks, months, years)
+ * @returns A formatted string representing the time elapsed (e.g., "123 days", "1 week and 1 day")
+ */
+export const formatTimeSince = (startDate: Date, unit: TimeUnit): string => {
+  return formatTimeBetween(startDate, new Date(), unit);
 };
 

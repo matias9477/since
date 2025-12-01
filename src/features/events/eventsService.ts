@@ -5,7 +5,7 @@ import type { Event, CreateEventInput, UpdateEventInput } from './types';
 import { DEFAULT_TIME_UNIT } from '@/config/constants';
 import { PREDEFINED_MILESTONES } from '@/config/milestones';
 import * as milestonesService from '@/features/milestones/milestonesService';
-import { scheduleEventMilestoneNotifications } from '@/utils/notifications';
+import { scheduleEventMilestoneNotifications, rescheduleEventReminderNotifications } from '@/utils/notifications';
 
 /**
  * Generate a UUID v4 string
@@ -180,6 +180,8 @@ export const updateEvent = async (id: string, input: UpdateEventInput): Promise<
     updatedAt: new Date(), // Pass Date object for mode: 'timestamp'
   };
   
+  const titleChanged = input.title !== undefined && input.title !== existing.title;
+  
   if (input.title !== undefined) updateData.title = input.title;
   if (input.description !== undefined) updateData.description = input.description;
   if (input.startDate !== undefined) {
@@ -204,7 +206,17 @@ export const updateEvent = async (id: string, input: UpdateEventInput): Promise<
   
   await db.update(events).set(updateData).where(eq(events.id, id));
   
-  return getEventById(id);
+  const updatedEvent = await getEventById(id);
+  
+  // If title changed, reschedule all reminder notifications with the new title
+  if (titleChanged && updatedEvent) {
+    rescheduleEventReminderNotifications(id, updatedEvent.title).catch((error) => {
+      // Log error but don't fail event update if reminder rescheduling fails
+      console.error('Error rescheduling reminder notifications:', error);
+    });
+  }
+  
+  return updatedEvent;
 };
 
 /**

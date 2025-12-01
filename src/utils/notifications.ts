@@ -1,5 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import { formatTimeSince, formatTimeBetween } from '@/lib/formatTimeSince';
+import type { TimeUnit } from '@/config/types';
 
 /**
  * Check if running in Expo Go
@@ -338,6 +340,8 @@ export const scheduleReminderNotification = async (
   reminderId: string,
   eventId: string,
   eventTitle: string,
+  eventStartDate: Date,
+  eventShowTimeAs: TimeUnit,
   reminderType: 'one_off' | 'recurring',
   scheduledAt: Date | null,
   recurrenceRule: 'daily' | 'weekly' | 'monthly' | 'yearly' | null
@@ -359,8 +363,14 @@ export const scheduleReminderNotification = async (
       return '';
     }
 
-    const reminderTypeLabel = reminderType === 'recurring' ? 'Recurring Reminder' : 'Reminder';
-    const body = `Don't forget: ${eventTitle}`;
+    // Calculate the time elapsed from event start date
+    // For one-time reminders: calculate to the scheduled notification time
+    // For recurring reminders: calculate to now (since they fire repeatedly, showing current time is reasonable)
+    const referenceDate = reminderType === 'one_off' && scheduledAt ? scheduledAt : new Date();
+    const timeElapsed = formatTimeBetween(eventStartDate, referenceDate, eventShowTimeAs);
+    
+    const reminderTypeLabel = reminderType === 'recurring' ? '⏰ Recurring Reminder' : '⏰ Reminder';
+    const body = `Remember: It's been ${timeElapsed} since ${eventTitle}`;
 
     let trigger: Notifications.NotificationTriggerInput | null = null;
 
@@ -479,6 +489,55 @@ export const cancelReminderNotification = async (reminderId: string): Promise<vo
     }
   } catch (error) {
     console.error(`[Notifications] Error cancelling reminder notification:`, error);
+  }
+};
+
+/**
+ * Reschedule all reminder notifications for an event with a new title
+ * Used when an event title is updated
+ */
+export const rescheduleEventReminderNotifications = async (
+  eventId: string,
+  newEventTitle: string
+): Promise<void> => {
+  if (isExpoGo()) return;
+
+  try {
+    // Import here to avoid circular dependency
+    const { getRemindersByEventId } = await import('@/features/reminders/remindersService');
+    const { getEventById } = await import('@/features/events/eventsService');
+    
+    // Get the event to access startDate and showTimeAs
+    const event = await getEventById(eventId);
+    if (!event) {
+      console.warn(`[Notifications] Event ${eventId} not found, cannot reschedule reminders`);
+      return;
+    }
+    
+    // Get all reminders for this event
+    const reminders = await getRemindersByEventId(eventId);
+    
+    // Reschedule each reminder notification with the new title
+    for (const reminder of reminders) {
+      // Cancel existing notification
+      await cancelReminderNotification(reminder.id);
+      
+      // Schedule new notification with updated title
+      await scheduleReminderNotification(
+        reminder.id,
+        eventId,
+        newEventTitle,
+        event.startDate,
+        event.showTimeAs,
+        reminder.type,
+        reminder.scheduledAt,
+        reminder.recurrenceRule
+      );
+    }
+    
+    console.log(`[Notifications] Rescheduled ${reminders.length} reminder notifications for event: ${newEventTitle}`);
+  } catch (error) {
+    console.error(`[Notifications] Error rescheduling reminder notifications for event ${eventId}:`, error);
   }
 };
 
