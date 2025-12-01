@@ -2,6 +2,8 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '@/db/client';
 import { reminders } from '@/db/schema';
 import { generateId } from '@/lib/id';
+import { scheduleReminderNotification, cancelReminderNotification } from '@/utils/notifications';
+import { getEventById } from '@/features/events/eventsService';
 import type { Reminder, CreateReminderInput, UpdateReminderInput } from './types';
 
 /**
@@ -84,6 +86,24 @@ export const createReminder = async (input: CreateReminderInput): Promise<Remind
 
   await db.insert(reminders).values(newReminder);
 
+  // Schedule notification for the reminder
+  try {
+    const event = await getEventById(input.eventId);
+    if (event) {
+      await scheduleReminderNotification(
+        id,
+        input.eventId,
+        event.title,
+        input.type,
+        input.scheduledAt || null,
+        input.recurrenceRule || null
+      );
+    }
+  } catch (error) {
+    // Log error but don't fail reminder creation if notification scheduling fails
+    console.error('Error scheduling reminder notification:', error);
+  }
+
   return {
     id,
     eventId: newReminder.eventId,
@@ -112,6 +132,13 @@ export const updateReminder = async (
     return null;
   }
 
+  // Cancel existing notification before updating
+  try {
+    await cancelReminderNotification(id);
+  } catch (error) {
+    console.error('Error cancelling existing reminder notification:', error);
+  }
+
   const updateData: Partial<typeof reminders.$inferInsert> = {
     updatedAt: new Date(),
   };
@@ -122,7 +149,29 @@ export const updateReminder = async (
 
   await db.update(reminders).set(updateData).where(eq(reminders.id, id));
 
-  return getReminderById(id);
+  const updatedReminder = await getReminderById(id);
+  
+  // Schedule new notification for the updated reminder
+  if (updatedReminder) {
+    try {
+      const event = await getEventById(updatedReminder.eventId);
+      if (event) {
+        await scheduleReminderNotification(
+          id,
+          updatedReminder.eventId,
+          event.title,
+          updatedReminder.type,
+          updatedReminder.scheduledAt,
+          updatedReminder.recurrenceRule
+        );
+      }
+    } catch (error) {
+      // Log error but don't fail reminder update if notification scheduling fails
+      console.error('Error scheduling updated reminder notification:', error);
+    }
+  }
+
+  return updatedReminder;
 };
 
 /**
@@ -135,6 +184,13 @@ export const deleteReminder = async (id: string): Promise<boolean> => {
   }
 
   try {
+    // Cancel notification before deleting reminder
+    try {
+      await cancelReminderNotification(id);
+    } catch (error) {
+      console.error('Error cancelling reminder notification:', error);
+    }
+
     await db.delete(reminders).where(eq(reminders.id, id));
     return true;
   } catch (error) {
@@ -153,6 +209,18 @@ export const deleteRemindersByEventId = async (eventId: string): Promise<boolean
   }
 
   try {
+    // Get all reminders for this event before deleting
+    const eventReminders = await getRemindersByEventId(eventId);
+    
+    // Cancel notifications for all reminders
+    for (const reminder of eventReminders) {
+      try {
+        await cancelReminderNotification(reminder.id);
+      } catch (error) {
+        console.error(`Error cancelling reminder notification for reminder ${reminder.id}:`, error);
+      }
+    }
+
     await db.delete(reminders).where(eq(reminders.eventId, eventId));
     return true;
   } catch (error) {

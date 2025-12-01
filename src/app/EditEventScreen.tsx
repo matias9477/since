@@ -63,7 +63,9 @@ export const EditEventScreen: React.FC = () => {
   };
 
   // Initialize startDate with today's date normalized to midnight
-  const [startDate, setStartDate] = useState(() => normalizeToMidnight(new Date()));
+  const [startDate, setStartDate] = useState(() =>
+    normalizeToMidnight(new Date())
+  );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState<EventIconName | null>(null);
@@ -161,6 +163,9 @@ export const EditEventScreen: React.FC = () => {
       !isNaN(selectedDate.getTime())
     ) {
       setReminderDate(selectedDate);
+    } else {
+      // If date is invalid, reset to current date
+      setReminderDate(new Date());
     }
     setShowReminderDatePicker(false);
   };
@@ -757,9 +762,16 @@ export const EditEventScreen: React.FC = () => {
                     </TouchableOpacity>
                     <DateTimePicker
                       isVisible={showReminderDatePicker}
-                      date={reminderDate}
+                      date={
+                        reminderDate instanceof Date &&
+                        !isNaN(reminderDate.getTime())
+                          ? reminderDate
+                          : new Date()
+                      }
                       onConfirm={handleReminderDateConfirm}
                       onCancel={handleReminderDateCancel}
+                      mode="datetime"
+                      display="inline"
                     />
                   </View>
                 )}

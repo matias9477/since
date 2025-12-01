@@ -1,6 +1,6 @@
-import { drizzle } from 'drizzle-orm/expo-sqlite';
-import * as SQLite from 'expo-sqlite';
-import * as schema from './schema';
+import { drizzle } from "drizzle-orm/expo-sqlite";
+import * as SQLite from "expo-sqlite";
+import * as schema from "./schema";
 
 let sqliteDb: SQLite.SQLiteDatabase | null = null;
 let drizzleDb: ReturnType<typeof drizzle> | null = null;
@@ -11,7 +11,7 @@ let drizzleDb: ReturnType<typeof drizzle> | null = null;
 const getDatabase = () => {
   if (!sqliteDb) {
     // TODO: Make database name configurable (currently hardcoded to 'since.db')
-    sqliteDb = SQLite.openDatabaseSync('since.db');
+    sqliteDb = SQLite.openDatabaseSync("since.db");
   }
   if (!drizzleDb) {
     drizzleDb = drizzle(sqliteDb, { schema });
@@ -33,7 +33,7 @@ export const getDb = () => {
 const runMigrations = async () => {
   if (!sqliteDb) {
     // TODO: Make database name configurable (currently hardcoded to 'since.db')
-    sqliteDb = SQLite.openDatabaseSync('since.db');
+    sqliteDb = SQLite.openDatabaseSync("since.db");
   }
 
   // Create events table
@@ -108,27 +108,26 @@ const runMigrations = async () => {
 export const initializeDatabase = async () => {
   // Run migrations to create tables
   await runMigrations();
-  
+
   const db = getDb();
-  
+
   if (!db) {
-    throw new Error('Failed to initialize database connection');
+    throw new Error("Failed to initialize database connection");
   }
-  
+
   // Initialize default settings if they don't exist
   const defaultSettings = await db.select().from(schema.settings).limit(1);
-  
+
   if (defaultSettings.length === 0) {
     // TODO: Replace hardcoded default values with constants from config/constants.ts
     await db.insert(schema.settings).values({
-      id: 'default',
-      defaultShowTimeAs: 'days',
+      id: "default",
+      defaultShowTimeAs: "days",
       useSystemTheme: true,
-      theme: 'light',
-      language: 'en',
+      theme: "light",
+      language: "en",
     });
   }
-  
+
   return db;
 };
-

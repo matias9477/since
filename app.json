@@ -2,7 +2,7 @@
   "expo": {
     "name": "Since",
     "slug": "since",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.matiasturra.since",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "NSUserNotificationUsageDescription": "This app uses notifications to congratulate you about your time sensitive accomplishments.",
         "ITSAppUsesNonExemptEncryption": false
@@ -24,12 +24,14 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FEDE13"
+        "backgroundColor": "#fdfea0"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
+        "NOTIFICATIONS",
         "NOTIFICATIONS"
-      ]
+      ],
+      "package": "com.matiasturra.since"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -46,7 +48,7 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#fcba03"
+          "color": "#fdfea0"
         }
       ]
     ]

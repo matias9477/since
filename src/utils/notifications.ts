@@ -331,6 +331,158 @@ export const sendTestReminderNotification = async (
 };
 
 /**
+ * Schedule a reminder notification
+ * Handles both one-time and recurring reminders
+ */
+export const scheduleReminderNotification = async (
+  reminderId: string,
+  eventId: string,
+  eventTitle: string,
+  reminderType: 'one_off' | 'recurring',
+  scheduledAt: Date | null,
+  recurrenceRule: 'daily' | 'weekly' | 'monthly' | 'yearly' | null
+): Promise<string> => {
+  if (isExpoGo()) return '';
+
+  try {
+    // Request permissions if not already granted
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== 'granted') {
+      console.warn('[Notifications] Permission not granted, cannot schedule reminder notification');
+      return '';
+    }
+
+    const reminderTypeLabel = reminderType === 'recurring' ? 'Recurring Reminder' : 'Reminder';
+    const body = `Don't forget: ${eventTitle}`;
+
+    let trigger: Notifications.NotificationTriggerInput | null = null;
+
+    if (reminderType === 'one_off') {
+      // One-time reminder - schedule at specific date/time
+      if (!scheduledAt) {
+        console.warn('[Notifications] Cannot schedule one-time reminder without scheduledAt date');
+        return '';
+      }
+
+      // Don't schedule if date is in the past
+      if (scheduledAt < new Date()) {
+        console.log(`[Notifications] Skipping reminder notification - date is in the past: ${scheduledAt.toISOString()}`);
+        return '';
+      }
+
+      trigger = scheduledAt as unknown as Notifications.NotificationTriggerInput;
+    } else {
+      // Recurring reminder - schedule based on recurrence rule
+      if (!scheduledAt || !recurrenceRule) {
+        console.warn('[Notifications] Cannot schedule recurring reminder without scheduledAt date and recurrenceRule');
+        return '';
+      }
+
+      const hour = scheduledAt.getHours();
+      const minute = scheduledAt.getMinutes();
+
+      switch (recurrenceRule) {
+        case 'daily':
+          trigger = {
+            type: Notifications.SchedulableTriggerInputTypes.DAILY,
+            hour,
+            minute,
+          };
+          break;
+        case 'weekly':
+          // Use the day of week from scheduledAt (0 = Sunday, 6 = Saturday)
+          const weekday = scheduledAt.getDay() + 1; // Convert to 1-7 (Sunday = 1)
+          trigger = {
+            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+            weekday,
+            hour,
+            minute,
+          };
+          break;
+        case 'monthly':
+          // Use the day of month from scheduledAt
+          const day = scheduledAt.getDate();
+          trigger = {
+            type: Notifications.SchedulableTriggerInputTypes.MONTHLY,
+            day,
+            hour,
+            minute,
+          };
+          break;
+        case 'yearly':
+          // Use month and day from scheduledAt
+          const month = scheduledAt.getMonth() + 1; // Convert to 1-12
+          const dayOfMonth = scheduledAt.getDate();
+          trigger = {
+            type: Notifications.SchedulableTriggerInputTypes.YEARLY,
+            month,
+            day: dayOfMonth,
+            hour,
+            minute,
+          };
+          break;
+        default:
+          console.warn(`[Notifications] Unknown recurrence rule: ${recurrenceRule}`);
+          return '';
+      }
+    }
+
+    const identifier = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: reminderTypeLabel,
+        body,
+        data: {
+          type: 'reminder',
+          eventId,
+          reminderId,
+          reminderType,
+        },
+        sound: true,
+      },
+      trigger,
+    });
+
+    console.log(`[Notifications] Scheduled reminder notification: ${reminderId} (${reminderType}) for event: ${eventTitle}`);
+    return identifier;
+  } catch (error) {
+    console.error(`[Notifications] Error scheduling reminder notification:`, error);
+    return '';
+  }
+};
+
+/**
+ * Cancel a reminder notification by finding it using the reminder ID
+ */
+export const cancelReminderNotification = async (reminderId: string): Promise<void> => {
+  if (isExpoGo()) return;
+
+  try {
+    // Get all scheduled notifications
+    const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+    
+    // Find notifications with matching reminderId in data
+    const reminderNotifications = scheduledNotifications.filter(
+      (notification) => notification.content.data?.reminderId === reminderId
+    );
+
+    // Cancel all matching notifications
+    for (const notification of reminderNotifications) {
+      await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+      console.log(`[Notifications] Cancelled reminder notification: ${reminderId}`);
+    }
+  } catch (error) {
+    console.error(`[Notifications] Error cancelling reminder notification:`, error);
+  }
+};
+
+/**
  * Check if notifications are enabled
  */
 export const areNotificationsEnabled = async (): Promise<boolean> => {
