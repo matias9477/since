@@ -49,38 +49,61 @@ export const EventRemindersSection: React.FC<EventRemindersSectionProps> = ({
                 <View style={styles.reminderItemHeader}>
                   <Ionicons
                     name={reminder.type === "recurring" ? "repeat" : "time"}
-                    size={20}
+                    size={18}
                     color={colors.primary}
                   />
                   <Text style={[styles.reminderType, { color: colors.text }]}>
                     {reminder.type === "recurring" ? "Recurring" : "One-time"}
                   </Text>
+                  {reminder.recurrenceRule && (
+                    <>
+                      <Text
+                        style={[
+                          styles.reminderSeparator,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        •
+                      </Text>
+                      <Text
+                        style={[
+                          styles.reminderRule,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {reminder.recurrenceRule.charAt(0).toUpperCase() +
+                          reminder.recurrenceRule.slice(1)}
+                      </Text>
+                    </>
+                  )}
+                  {reminder.type === "one_off" && reminder.scheduledAt && (
+                    <>
+                      <Text
+                        style={[
+                          styles.reminderSeparator,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        •
+                      </Text>
+                      <Text
+                        style={[
+                          styles.reminderDate,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {reminder.scheduledAt.toLocaleDateString([], {
+                          month: "short",
+                          day: "numeric",
+                        })}{" "}
+                        {reminder.scheduledAt.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </Text>
+                    </>
+                  )}
                 </View>
-                {reminder.recurrenceRule && (
-                  <Text
-                    style={[
-                      styles.reminderRule,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    {reminder.recurrenceRule.charAt(0).toUpperCase() +
-                      reminder.recurrenceRule.slice(1)}
-                  </Text>
-                )}
-                {reminder.scheduledAt && (
-                  <Text
-                    style={[
-                      styles.reminderDate,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    {reminder.scheduledAt.toLocaleDateString()} at{" "}
-                    {reminder.scheduledAt.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </Text>
-                )}
               </View>
             </View>
           ))}
@@ -118,10 +141,10 @@ const styles = StyleSheet.create({
   },
   reminderItem: {
     borderRadius: 8,
-    padding: 14,
+    padding: 12,
     borderLeftWidth: 3,
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
   },
   reminderItemLeft: {
@@ -131,22 +154,22 @@ const styles = StyleSheet.create({
   reminderItemHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 6,
+    gap: 6,
+    flexWrap: "wrap",
   },
   reminderType: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
+  },
+  reminderSeparator: {
+    fontSize: 14,
+    marginHorizontal: 2,
   },
   reminderRule: {
     fontSize: 14,
-    marginTop: 4,
-    lineHeight: 20,
   },
   reminderDate: {
     fontSize: 14,
-    marginTop: 4,
-    lineHeight: 20,
   },
 });
 

@@ -16,6 +16,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { DateTimePicker } from "@/components/shared/DateTimePicker";
 import { useEventsStore } from "@/features/events/eventsStore";
 import { useRemindersStore } from "@/features/reminders/remindersStore";
+import { cleanupPastReminders } from "@/features/reminders/remindersService";
 import { RECURRENCE_FREQUENCIES, REMINDER_TYPES } from "@/config/constants";
 import { EVENT_ICONS, type EventIconName } from "@/config/eventIcons";
 import { PickerModal } from "@/components/shared/PickerModal";
@@ -98,6 +99,26 @@ export const EditEventScreen: React.FC = () => {
   useEffect(() => {
     if (eventId) {
       loadReminders(eventId);
+      // Clean up past reminders when loading, then reload reminders
+      // Use setTimeout to ensure database is ready
+      setTimeout(() => {
+        cleanupPastReminders(eventId)
+          .then((deletedCount) => {
+            if (deletedCount > 0) {
+              // Reload reminders after cleanup to refresh the UI
+              loadReminders(eventId);
+            }
+          })
+          .catch((error: unknown) => {
+            // Silently handle errors - don't break the UI
+            if (
+              error instanceof Error &&
+              !error.message.includes("Database not initialized")
+            ) {
+              console.error("Error cleaning up past reminders:", error);
+            }
+          });
+      }, 100);
     }
   }, [eventId, loadReminders]);
 
@@ -198,23 +219,33 @@ export const EditEventScreen: React.FC = () => {
     try {
       if (editingReminderId) {
         // Update existing reminder
+        // For recurring reminders, use event start date/time; for one-time, use selected date/time
         const updateInput: UpdateReminderInput = {
           type: reminderType,
+          scheduledAt:
+            reminderType === "recurring" && event
+              ? event.startDate
+              : reminderDate,
           ...(reminderType === "recurring"
             ? { recurrenceRule: recurrenceFrequency }
-            : { scheduledAt: reminderDate }),
+            : {}),
         };
         await useRemindersStore
           .getState()
           .updateReminder(editingReminderId, updateInput);
       } else {
         // Create new reminder
+        // For recurring reminders, use event start date/time; for one-time, use selected date/time
         const input: CreateReminderInput = {
           eventId,
           type: reminderType,
+          scheduledAt:
+            reminderType === "recurring" && event
+              ? event.startDate
+              : reminderDate,
           ...(reminderType === "recurring"
             ? { recurrenceRule: recurrenceFrequency }
-            : { scheduledAt: reminderDate }),
+            : {}),
         };
         await createReminder(input);
       }
@@ -495,20 +526,21 @@ export const EditEventScreen: React.FC = () => {
                               reminder.recurrenceRule.slice(1)}
                           </Text>
                         )}
-                        {reminder.scheduledAt && (
-                          <Text
-                            style={[
-                              styles.reminderItemSubtext,
-                              { color: colors.textSecondary },
-                            ]}
-                          >
-                            {reminder.scheduledAt.toLocaleDateString()} at{" "}
-                            {reminder.scheduledAt.toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </Text>
-                        )}
+                        {reminder.type === "one_off" &&
+                          reminder.scheduledAt && (
+                            <Text
+                              style={[
+                                styles.reminderItemSubtext,
+                                { color: colors.textSecondary },
+                              ]}
+                            >
+                              {reminder.scheduledAt.toLocaleDateString()} at{" "}
+                              {reminder.scheduledAt.toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </Text>
+                          )}
                       </View>
                       <View style={styles.reminderItemActions}>
                         <TouchableOpacity
@@ -727,6 +759,14 @@ export const EditEventScreen: React.FC = () => {
                         </TouchableOpacity>
                       ))}
                     </View>
+                    <Text
+                      style={[
+                        styles.helperText,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      Reminder will use the event start date and time
+                    </Text>
                   </View>
                 )}
 
@@ -1010,5 +1050,10 @@ const styles = StyleSheet.create({
   frequencyOptionText: {
     fontSize: 16,
     fontWeight: "500",
+  },
+  helperText: {
+    fontSize: 12,
+    marginTop: 8,
+    fontStyle: "italic",
   },
 });

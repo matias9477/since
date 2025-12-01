@@ -30,12 +30,33 @@ export const configureNotifications = async (): Promise<boolean> => {
 
     // Set notification handler
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
+      handleNotification: async (notification) => {
+        // Handle reminder notifications - delete one-time reminders after they fire
+        try {
+          if (notification?.request?.content?.data?.type === 'reminder' && 
+              notification.request.content.data?.reminderType === 'one_off') {
+            // Delete the one-time reminder after it fires
+            const reminderId = notification.request.content.data?.reminderId;
+            if (reminderId) {
+              // Import here to avoid circular dependency
+              const { deleteReminder } = await import('@/features/reminders/remindersService');
+              deleteReminder(reminderId).catch((error) => {
+                console.error(`[Notifications] Error deleting reminder ${reminderId} after notification:`, error);
+              });
+            }
+          }
+        } catch (error) {
+          // Ignore errors in notification handler to prevent breaking notifications
+          console.error('[Notifications] Error in notification handler:', error);
+        }
+        
+        return {
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+        };
+      },
     });
 
     return true;
@@ -387,7 +408,10 @@ export const scheduleReminderNotification = async (
         return '';
       }
 
-      trigger = scheduledAt as unknown as Notifications.NotificationTriggerInput;
+      trigger = {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: scheduledAt,
+      };
     } else {
       // Recurring reminder - schedule based on recurrence rule
       if (!scheduledAt || !recurrenceRule) {
@@ -477,15 +501,35 @@ export const cancelReminderNotification = async (reminderId: string): Promise<vo
     // Get all scheduled notifications
     const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
     
+    if (!scheduledNotifications || !Array.isArray(scheduledNotifications)) {
+      return;
+    }
+    
     // Find notifications with matching reminderId in data
     const reminderNotifications = scheduledNotifications.filter(
-      (notification) => notification.content.data?.reminderId === reminderId
+      (notification) => {
+        try {
+          if (!notification || !notification.content) {
+            return false;
+          }
+          const data = notification.content.data;
+          if (!data || typeof data !== 'object') {
+            return false;
+          }
+          return data.reminderId === reminderId;
+        } catch (error) {
+          // Skip notifications with invalid data structure
+          return false;
+        }
+      }
     );
 
     // Cancel all matching notifications
     for (const notification of reminderNotifications) {
-      await Notifications.cancelScheduledNotificationAsync(notification.identifier);
-      console.log(`[Notifications] Cancelled reminder notification: ${reminderId}`);
+      if (notification && notification.identifier) {
+        await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+        console.log(`[Notifications] Cancelled reminder notification: ${reminderId}`);
+      }
     }
   } catch (error) {
     console.error(`[Notifications] Error cancelling reminder notification:`, error);
@@ -514,8 +558,8 @@ export const rescheduleEventReminderNotifications = async (
       return;
     }
     
-    // Get all reminders for this event
-    const reminders = await getRemindersByEventId(eventId);
+    // Get all reminders for this event (including past ones for rescheduling)
+    const reminders = await getRemindersByEventId(eventId, true);
     
     // Reschedule each reminder notification with the new title
     for (const reminder of reminders) {
@@ -691,7 +735,10 @@ export const scheduleMilestoneNotification = async (
         },
         sound: true,
       },
-      trigger: milestoneDate as unknown as Notifications.NotificationTriggerInput, // OS-level scheduling - works when app is closed
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: milestoneDate,
+      },
     });
 
     console.log(`[Notifications] Scheduled milestone notification: ${milestoneLabel} for ${milestoneDate.toISOString()}`);

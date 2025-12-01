@@ -18,6 +18,7 @@ import { EventRemindersSection } from "@/components/events/EventRemindersSection
 import { EventMilestonesSection } from "@/components/events/EventMilestonesSection";
 import { useTheme } from "@/theme/index";
 import type { RootStackParamList } from "@/navigation/types";
+import { cleanupPastReminders } from "@/features/reminders/remindersService";
 
 type EventDetailScreenRouteProp = RouteProp<RootStackParamList, "EventDetail">;
 type EventDetailScreenNavigationProp = NativeStackNavigationProp<
@@ -51,6 +52,26 @@ export const EventDetailScreen: React.FC = () => {
     if (eventId) {
       loadMilestones(eventId);
       loadReminders(eventId);
+      // Clean up past reminders when loading, then reload reminders
+      // Use setTimeout to ensure database is ready
+      setTimeout(() => {
+        cleanupPastReminders(eventId)
+          .then((deletedCount) => {
+            if (deletedCount > 0) {
+              // Reload reminders after cleanup to refresh the UI
+              loadReminders(eventId);
+            }
+          })
+          .catch((error: unknown) => {
+            // Silently handle errors - don't break the UI
+            if (
+              error instanceof Error &&
+              !error.message.includes("Database not initialized")
+            ) {
+              console.error("Error cleaning up past reminders:", error);
+            }
+          });
+      }, 100);
     }
   }, [eventId, loadMilestones, loadReminders]);
 

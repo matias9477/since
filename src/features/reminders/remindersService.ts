@@ -7,9 +7,31 @@ import { getEventById } from '@/features/events/eventsService';
 import type { Reminder, CreateReminderInput, UpdateReminderInput } from './types';
 
 /**
- * Get all reminders for an event
+ * Check if a one-time reminder has passed (scheduledAt is in the past)
  */
-export const getRemindersByEventId = async (eventId: string): Promise<Reminder[]> => {
+export const isReminderPast = (reminder: Reminder): boolean => {
+  // Only one-time reminders can be "past"
+  if (reminder.type !== 'one_off') {
+    return false;
+  }
+  
+  // If no scheduledAt date, it's not past
+  if (!reminder.scheduledAt) {
+    return false;
+  }
+  
+  // Check if scheduledAt is before now
+  return reminder.scheduledAt < new Date();
+};
+
+/**
+ * Get all reminders for an event
+ * Optionally filters out past one-time reminders
+ */
+export const getRemindersByEventId = async (
+  eventId: string,
+  includePast: boolean = false
+): Promise<Reminder[]> => {
   const db = getDb();
   if (!db) {
     throw new Error('Database not initialized');
@@ -20,7 +42,7 @@ export const getRemindersByEventId = async (eventId: string): Promise<Reminder[]
     .from(reminders)
     .where(eq(reminders.eventId, eventId));
 
-  return results.map((row) => ({
+  const reminderList = results.map((row) => ({
     id: row.id,
     eventId: row.eventId,
     type: row.type,
@@ -29,6 +51,13 @@ export const getRemindersByEventId = async (eventId: string): Promise<Reminder[]
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
   }));
+
+  // Filter out past one-time reminders if includePast is false
+  if (!includePast) {
+    return reminderList.filter((reminder) => !isReminderPast(reminder));
+  }
+
+  return reminderList;
 };
 
 /**
@@ -204,6 +233,81 @@ export const deleteReminder = async (id: string): Promise<boolean> => {
 };
 
 /**
+ * Clean up past one-time reminders for an event
+ * Deletes reminders that have already fired
+ * Only deletes one-time reminders - recurring reminders are never deleted
+ */
+export const cleanupPastReminders = async (eventId: string): Promise<number> => {
+  if (!eventId) {
+    console.warn('[Reminders] cleanupPastReminders called without eventId');
+    return 0;
+  }
+
+  const db = getDb();
+  if (!db) {
+    console.warn('[Reminders] Database not initialized, skipping cleanup');
+    return 0;
+  }
+
+  try {
+    // Get all reminders for this event
+    const allReminders = await getRemindersByEventId(eventId, true);
+    
+    if (!allReminders || !Array.isArray(allReminders)) {
+      return 0;
+    }
+    
+    // Find past one-time reminders only (isReminderPast already filters out recurring reminders)
+    const pastReminders = allReminders.filter((reminder) => {
+      if (!reminder) {
+        return false;
+      }
+      // Double-check: only process one-time reminders
+      if (reminder.type !== 'one_off') {
+        return false;
+      }
+      return isReminderPast(reminder);
+    });
+    
+    if (pastReminders.length === 0) {
+      return 0;
+    }
+    
+    // Delete each past reminder
+    let deletedCount = 0;
+    for (const reminder of pastReminders) {
+      if (!reminder || !reminder.id) {
+        continue;
+      }
+      
+      try {
+        // Cancel notification before deleting (if it exists)
+        try {
+          await cancelReminderNotification(reminder.id);
+        } catch (cancelError) {
+          // Ignore errors when cancelling - notification might not exist
+          console.log(`[Reminders] Could not cancel notification for reminder ${reminder.id}, continuing with deletion`);
+        }
+        
+        // Delete from database - use same pattern as deleteReminder
+        await db.delete(reminders).where(eq(reminders.id, reminder.id));
+        deletedCount++;
+      } catch (error) {
+        console.error(`Error deleting past reminder ${reminder.id}:`, error);
+      }
+    }
+    
+    if (deletedCount > 0) {
+      console.log(`[Reminders] Cleaned up ${deletedCount} past reminder(s) for event ${eventId}`);
+    }
+    return deletedCount;
+  } catch (error) {
+    console.error('[Reminders] Error cleaning up past reminders:', error);
+    return 0;
+  }
+};
+
+/**
  * Delete all reminders for an event
  */
 export const deleteRemindersByEventId = async (eventId: string): Promise<boolean> => {
@@ -213,8 +317,8 @@ export const deleteRemindersByEventId = async (eventId: string): Promise<boolean
   }
 
   try {
-    // Get all reminders for this event before deleting
-    const eventReminders = await getRemindersByEventId(eventId);
+    // Get all reminders for this event before deleting (including past ones)
+    const eventReminders = await getRemindersByEventId(eventId, true);
     
     // Cancel notifications for all reminders
     for (const reminder of eventReminders) {
